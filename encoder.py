@@ -67,6 +67,16 @@ class Encoder:
             packet_vector = packet_vector + [new_packet]
         return packet_vector
 
+    def get_generation_count(self, packets: list[Packet]) -> int:
+        return int(np.ceil(len(packets)/self.generation_size))
+
+    def get_packets_by_generation_id(self, packets: list[Packet], generation_id: int) -> list[Packet]:
+        result = []
+        for packet in packets:
+            if(packet.generation_id == generation_id):
+                result = result + [packet]
+        return result
+
     def create_random_coefficient_vector(self):
         coefficient_vector = []
         for i in range(self.generation_size):
@@ -74,14 +84,16 @@ class Encoder:
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 
-    def create_coded_packet(self, generation_packets: list[Packet], generation_id):
+    def create_coded_packet(self, systematic_packets: list[Packet], generation_id: int):
         random_coefficient_vector = self.create_random_coefficient_vector()
         random_coefficient_1D_matrix = random_coefficient_vector.reshape(
             (-1, self.generation_size))
 
         packet_data_matrix = []
-        for packet in generation_packets:
-            packet_data_matrix = packet_data_matrix + [self.GF(packet.data)]
+        for packet in systematic_packets:
+            if(packet.generation_id == generation_id):
+                packet_data_matrix = packet_data_matrix + \
+                    [self.GF(packet.data)]
 
         packet_data_galois_matrix = self.GF(packet_data_matrix)
         coded_packet_data = random_coefficient_1D_matrix.dot(
