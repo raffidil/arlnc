@@ -10,6 +10,10 @@ from packet import Packet
 class Encoder:
     def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384):
         self.field_order = field_order
+        self.field_degree = int(np.log2(field_order))
+        if not np.log2(field_order).is_integer():
+            raise TypeError(
+                'Error while creating the galois field: Field order must be a positive and integer power of 2')
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
@@ -22,11 +26,11 @@ class Encoder:
         required_additional_zeroes = (
             self.packet_size - (self.total_size % self.packet_size)) % self.packet_size
 
-        for i in range(self.total_size * 8):
+        for i in range(self.total_size * self.field_degree):
             temp = str(random.randint(0, 1))
             binary_string += temp
 
-        for i in range(required_additional_zeroes * 8):
+        for i in range(required_additional_zeroes * self.field_degree):
             zero_margin += "0"
 
         result = zero_margin + binary_string
@@ -35,7 +39,7 @@ class Encoder:
         return result
 
     def make_matrix_from_binary_string(self, binary_string):
-        binary_data_array = re.findall('........', binary_string)
+        binary_data_array = re.findall('.' * self.field_degree, binary_string)
         data = []
         for i in binary_data_array:
             data = data + [int(i, 2)]
@@ -120,17 +124,3 @@ class Encoder:
                 systematic_packets, generation_id)
             coded_packets_list = coded_packets_list + [coded_packet]
         return coded_packets_list
-
-    def _helper_prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> list[Packet]:
-        systematic_packets = self.create_packet_vector(
-            force_to_recreate=force_to_recreate)
-        number_of_generations = self.get_generation_count(systematic_packets)
-
-        packets_to_send = []
-        for generation in range(number_of_generations):
-            generation_packets = self.get_packets_by_generation_id(
-                systematic_packets, generation)
-            coded_packets = self.create_coded_packet_vector(
-                generation_packets, generation_id=generation, count=redundancy)
-            packets_to_send = packets_to_send + generation_packets + coded_packets
-        return packets_to_send

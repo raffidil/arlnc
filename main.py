@@ -2,14 +2,15 @@ import json
 from numpy.linalg import matrix_rank
 import numpy as np
 import galois
-from encoder import Encoder
+from block_based_rlnc import BlockBasedRLNC
 
 
-encoder = Encoder(field_order=2**8, generation_size=8,
-                  packet_size=16, total_size=4450)
+rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
+                      packet_size=16, total_size=4250)
+encoder = rlnc.get_encoder()
 
 
-packets_to_send = encoder._helper_prepare_data_to_send(
+packets_to_send = rlnc._prepare_data_to_send(
     force_to_recreate=True, redundancy=4)
 
 
