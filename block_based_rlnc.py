@@ -19,6 +19,9 @@ class BlockBasedRLNC:
     def get_encoder(self):
         return self.encoder
 
+    def get_decoder(self):
+        return self.decoder
+
     def _prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> list[Packet]:
         systematic_packets = self.encoder.create_packet_vector(
             force_to_recreate=force_to_recreate)
