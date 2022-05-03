@@ -47,23 +47,31 @@ class Encoder:
             binary_string = f.read()
             return binary_string
 
-    def create_packet_vector(self) -> list[Packet]:
+    def create_packet_vector(self, force_to_recreate=False) -> list[Packet]:
         file_exists = exists("output.binary")
         binary_string = ""
-        if(file_exists):
+        if(file_exists and not force_to_recreate):
             binary_string = self.read_random_binary_string()
         else:
             binary_string = self.create_random_binary_string()
         byte_matrix = self.make_matrix_from_binary_string(binary_string)
 
+        number_of_packets = len(byte_matrix)
+        number_of_packets_from_incomplete_generation = number_of_packets % self.generation_size
+        first_incomplete_generation_packet_index = number_of_packets - \
+            number_of_packets_from_incomplete_generation
+
         packet_vector = []
         for index, row in enumerate(byte_matrix):
+            generation_size = self.generation_size
+            if index >= first_incomplete_generation_packet_index:
+                generation_size = number_of_packets_from_incomplete_generation
             generation_id = int(index/self.generation_size)
             packet_index_in_generation = index % self.generation_size
-            coefficients = np.zeros(self.generation_size, dtype="int")
+            coefficients = np.zeros(generation_size, dtype="int")
             coefficients[packet_index_in_generation] = 1
             new_packet = Packet(
-                data=row, coefficient_vector=coefficients, generation_id=generation_id)
+                data=row, coefficient_vector=coefficients, generation_id=generation_id, generation_size=generation_size)
             packet_vector = packet_vector + [new_packet]
         return packet_vector
 
@@ -77,17 +85,20 @@ class Encoder:
                 result = result + [packet]
         return result
 
-    def create_random_coefficient_vector(self):
+    def create_random_coefficient_vector(self, size):
         coefficient_vector = []
-        for i in range(self.generation_size):
+        for i in range(size):
             temp = random.randint(0, self.field_order-1)
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 
     def create_coded_packet(self, systematic_packets: list[Packet], generation_id: int):
-        random_coefficient_vector = self.create_random_coefficient_vector()
+        packet_set_generation_size = systematic_packets[0].generation_size
+        number_of_packets_to_code = len(systematic_packets)
+        random_coefficient_vector = self.create_random_coefficient_vector(
+            number_of_packets_to_code)
         random_coefficient_1D_matrix = random_coefficient_vector.reshape(
-            (-1, self.generation_size))
+            (-1, number_of_packets_to_code))
 
         packet_data_matrix = []
         for packet in systematic_packets:
@@ -99,5 +110,5 @@ class Encoder:
         coded_packet_data = random_coefficient_1D_matrix.dot(
             packet_data_galois_matrix)[0]  # returns 1xN matrix => turn to vector
         coded_packet = Packet(
-            data=coded_packet_data, coefficient_vector=random_coefficient_vector, generation_id=generation_id)
+            data=coded_packet_data, coefficient_vector=random_coefficient_vector, generation_id=generation_id, generation_size=packet_set_generation_size)
         return coded_packet

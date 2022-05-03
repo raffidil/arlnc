@@ -4,14 +4,12 @@ import numpy as np
 import galois
 from encoder import Encoder
 
-# from utils import create_coded_packet_matrix, create_packet_matrix, create_random_coefficient_matrix
-
 
 encoder = Encoder(field_order=2**8, generation_size=8,
-                  packet_size=16, total_size=1024)
+                  packet_size=16, total_size=42350)
 
 
-systematic_packets = encoder.create_packet_vector()
+systematic_packets = encoder.create_packet_vector(force_to_recreate=True)
 number_of_generations = encoder.get_generation_count(systematic_packets)
 
 packets_to_send = []
@@ -26,15 +24,10 @@ print("syst len: ", len(systematic_packets))
 print("gen count: ", number_of_generations)
 print("total len: ", len(packets_to_send))
 
-# print(len(gen_0_packets), "\n")
 
-
-# for p in gen_0_packets:
-#     # if(p.generation_id == 0):
-#     print(p.data)
-#     print(p.coefficient_vector)
-#     print(p.generation_id)
-
-
-##### TO DO ####
-# create coded packet for smaller gens (less than gen_size)
+for p in packets_to_send:
+    # if(p.generation_id == 0):
+    # print("\ndata:\n", p.data)
+    # print("coef vector:\n", p.coefficient_vector)
+    # print("gen ID:", p.generation_id)
+    print(p.generation_id, p.generation_size, p.coefficient_vector)
