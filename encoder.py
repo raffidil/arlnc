@@ -92,7 +92,7 @@ class Encoder:
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 
-    def create_coded_packet(self, systematic_packets: list[Packet], generation_id: int):
+    def create_coded_packet(self, systematic_packets: list[Packet], generation_id: int) -> Packet:
         packet_set_generation_size = systematic_packets[0].generation_size
         number_of_packets_to_code = len(systematic_packets)
         random_coefficient_vector = self.create_random_coefficient_vector(
@@ -112,3 +112,25 @@ class Encoder:
         coded_packet = Packet(
             data=coded_packet_data, coefficient_vector=random_coefficient_vector, generation_id=generation_id, generation_size=packet_set_generation_size)
         return coded_packet
+
+    def create_coded_packet_vector(self, systematic_packets: list[Packet], generation_id: int, count=1) -> list[Packet]:
+        coded_packets_list = []
+        for i in range(count):
+            coded_packet = self.create_coded_packet(
+                systematic_packets, generation_id)
+            coded_packets_list = coded_packets_list + [coded_packet]
+        return coded_packets_list
+
+    def _helper_prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> list[Packet]:
+        systematic_packets = self.create_packet_vector(
+            force_to_recreate=force_to_recreate)
+        number_of_generations = self.get_generation_count(systematic_packets)
+
+        packets_to_send = []
+        for generation in range(number_of_generations):
+            generation_packets = self.get_packets_by_generation_id(
+                systematic_packets, generation)
+            coded_packets = self.create_coded_packet_vector(
+                generation_packets, generation_id=generation, count=redundancy)
+            packets_to_send = packets_to_send + generation_packets + coded_packets
+        return packets_to_send
