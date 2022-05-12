@@ -14,19 +14,33 @@ decoder = rlnc.get_decoder()
 packets_to_send = rlnc._prepare_data_to_send(
     force_to_recreate=True, redundancy=4)
 
-generation_7_packets = encoder.get_packets_by_generation_id(
+
+print("\n packets from generation to send: \n")
+selected_generation = encoder.get_packets_by_generation_id(
     packets_to_send, 7)
 
-result = decoder.recover_generation(generation_7_packets, 7)
+print("systematic packets: ")
+for index, p in enumerate(selected_generation):
+    print(p.data)
+    if(index == 7):
+        print('\n coded packets:')
+
+# for p in generation_7_packets:
+#     print(p.generation_id, p.generation_size, p.coefficient_vector)
 
 
-for p in generation_7_packets:
-    print(p.generation_id, p.generation_size, p.coefficient_vector)
+received_packets = rlnc._apply_loss_to_packets(
+    selected_generation, loss_rate=0.2)
 
-for p in generation_7_packets:
-    print("data", p.data)
+# print("\n loss applies packets: \n")
+# for p in loss_applied_packets:
+#     print(p.generation_id, p.generation_size, p.coefficient_vector)
 
-print("\n")
+# for p in loss_applied_packets:
+#     print(p.data)
 
+
+print("\n recovered packets:")
+result = decoder.recover_generation_data(received_packets, 7)
 for p in result:
     print(p)

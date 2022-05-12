@@ -3,7 +3,6 @@ import random
 import re
 import numpy as np
 import galois
-from os.path import exists
 from packet import Packet
 
 
@@ -15,17 +14,17 @@ class Decoder:
         self.total_size = total_size
         self.GF = galois.GF(field_order, display="int")
 
-    def recover_generation(self, packets: list[Packet], generation_id=1) -> list[Packet]:
+    def recover_generation_data(self, packets: list[Packet], generation_id=1):
         generation: list[Packet] = []
         coefficients = []
         data = []
         for packet in packets:
             if(packet.generation_id == generation_id):
                 generation = generation + [packet]
+
         generation_size = generation[0].generation_size
 
         number_of_packets = len(generation)
-        print("gen", number_of_packets)
         redundant_packet_margin = number_of_packets - generation_size
 
         if(redundant_packet_margin > 0):
@@ -35,8 +34,10 @@ class Decoder:
             coefficients = coefficients + [packet.coefficient_vector]
             data = data + [packet.data]
 
+        coefficients = self.GF(coefficients)
+        data = self.GF(data)
+
         coefficients_rank = np.linalg.matrix_rank(coefficients)
-        print("received coef. rank:", coefficients_rank)
 
         if(coefficients_rank == generation_size):
             return np.linalg.solve(coefficients, data)

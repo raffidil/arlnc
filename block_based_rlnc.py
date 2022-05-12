@@ -3,6 +3,10 @@ from decoder import Decoder
 from encoder import Encoder
 from packet import Packet
 
+from numpy.random import default_rng
+import numpy as np
+import random
+
 
 class BlockBasedRLNC:
     def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384):
@@ -36,3 +40,17 @@ class BlockBasedRLNC:
                 generation_packets, generation_id=generation, count=redundancy)
             packets_to_send = packets_to_send + generation_packets + coded_packets
         return packets_to_send
+
+    def _apply_loss_to_packets(self, packets: list[Packet], loss_rate=0.1):
+        number_of_packets = len(packets)
+        number_of_lost_packets = int(np.ceil(number_of_packets*loss_rate))
+        rng = default_rng()
+        lost_packets_index = rng.choice(
+            number_of_packets, size=number_of_lost_packets, replace=False)
+        result = []
+        for index, packet in enumerate(packets):
+            if(index not in lost_packets_index):
+                result = result + [packet]
+        # shuffle the packets to emulate the out-of-order delivery
+        random.shuffle(result)
+        return result
