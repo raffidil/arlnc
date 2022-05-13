@@ -1,18 +1,16 @@
-from multiprocessing.dummy import Array
-import random
-import re
 import numpy as np
-import galois
+from generation_buffer import GenerationBuffer
+from generation import Generation
 from packet import Packet
 
 
 class Decoder:
-    def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384):
-        self.field_order = field_order
+    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384):
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
-        self.GF = galois.GF(field_order, display="int")
+        self.GF = GF
+        self.generation_buffer = GenerationBuffer()
 
     def recover_generation_data(self, packets: list[Packet], generation_id=1):
         generation: list[Packet] = []
@@ -47,3 +45,34 @@ class Decoder:
             print("required additional coded packets: ",
                   generation_size-coefficients_rank)
             return []
+
+    def recover_data(self, packets: list[Packet]):
+        for packet in packets:
+            generation_id = packet.generation_id
+            generation_size = packet.generation_size
+            current_generation = self.generation_buffer.get_element(
+                generation_id)
+
+            if(current_generation == None):
+                new_generation = Generation(
+                    generation_size=generation_size, generation_id=generation_id, GF=self.GF)
+                new_generation.add_packet(packet)
+                current_generation = new_generation
+
+            else:
+                if(current_generation.has_recovered):
+                    continue  # skip the packet (packet is redundant)
+                current_generation.add_packet(packet)
+
+            current_generation_rank = current_generation.get_rank()
+            if(current_generation_rank == generation_size):
+                recovered_generation_data = self.recover_generation_data(
+                    current_generation.packets, generation_id)
+                current_generation.has_recovered = True
+                current_generation.store_decoded_data(
+                    recovered_generation_data)
+            # else:
+                # to do: restart timer for gen i
+
+            self.generation_buffer.insert(current_generation, generation_id)
+        return self.generation_buffer

@@ -1,4 +1,3 @@
-from multiprocessing.dummy import Array
 import random
 import re
 import numpy as np
@@ -8,16 +7,16 @@ from packet import Packet
 
 
 class Encoder:
-    def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384):
-        self.field_order = field_order
-        self.field_degree = int(np.log2(field_order))
-        if not np.log2(field_order).is_integer():
+    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384):
+        self.field_order = GF.order
+        self.field_degree = int(np.log2(self.field_order))
+        if not np.log2(self.field_order).is_integer():
             raise TypeError(
                 'Error while creating the galois field: Field order must be a positive and integer power of 2')
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
-        self.GF = galois.GF(field_order, display="int")
+        self.GF = galois.GF(self.field_order, display="int")
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""

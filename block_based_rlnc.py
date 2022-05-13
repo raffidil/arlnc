@@ -15,9 +15,9 @@ class BlockBasedRLNC:
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
         self.GF = galois.GF(field_order, display="int")
-        self.encoder = Encoder(field_order=field_order, generation_size=generation_size,
+        self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size)
-        self.decoder = Decoder(field_order=field_order, generation_size=generation_size,
+        self.decoder = Decoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size)
 
     def get_encoder(self):

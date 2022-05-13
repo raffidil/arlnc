@@ -15,6 +15,12 @@ packets_to_send = rlnc._prepare_data_to_send(
     force_to_recreate=True, redundancy=4)
 
 
+generation_buffer = decoder.recover_data(packets_to_send)
+
+number_of_decoded_packets = 0
+for generation in generation_buffer.buffer:
+    number_of_decoded_packets += len(generation.decoded_data)
+
 print("\n packets from generation to send: \n")
 selected_generation = encoder.get_packets_by_generation_id(
     packets_to_send, 7)
