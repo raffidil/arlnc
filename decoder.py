@@ -65,20 +65,25 @@ class Decoder:
 
             else:
                 if(current_generation.has_recovered or len(current_generation.packets) == generation_size):
-                    continue  # skip the packet (packet is redundant)
+                    # skip the packet (packet is redundant), all data has recovered before
+                    continue
 
-                future_coefficients = self.GF(current_generation.get_coefficients() +
-                                              [packet.coefficient_vector])
-                future_coefficients_rank = np.linalg.matrix_rank(
-                    future_coefficients)
-                if(len(future_coefficients) == generation_size and future_coefficients_rank != generation_size):
-                    print('\nfound dependant packet, ignore\n')
+                next_coefficients = self.GF(current_generation.get_coefficients() +
+                                            [packet.coefficient_vector])
+                next_coefficients_rank = np.linalg.matrix_rank(
+                    next_coefficients)
+
+                if(len(next_coefficients) != next_coefficients_rank):
+                    print('\npacket is dependant to previous ones, drop\n')
                     continue  # not saving the dependant packet for decoding
 
                 current_generation.add_packet(packet)
 
+            # because we ensure the linear independency of all stored packets, the next line is similar to
+            # checking the equality of stored packets length with gen_size
             current_generation_rank = current_generation.get_rank()
             if(current_generation_rank == generation_size):
+                # to do: stop timer for the gen
                 recovered_generation_data = self.recover_generation_data(
                     current_generation.packets, generation_id)
                 current_generation.has_recovered = True
