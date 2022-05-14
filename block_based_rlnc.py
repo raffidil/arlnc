@@ -26,20 +26,20 @@ class BlockBasedRLNC:
     def get_decoder(self):
         return self.decoder
 
-    def _prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> list[Packet]:
+    def _prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> tuple[list[Packet], list[Packet]]:
         systematic_packets = self.encoder.create_packet_vector(
             force_to_recreate=force_to_recreate)
         number_of_generations = self.encoder.get_generation_count(
             systematic_packets)
 
-        packets_to_send = []
+        packets_to_send: list[Packet] = []
         for generation in range(number_of_generations):
             generation_packets = self.encoder.get_packets_by_generation_id(
                 systematic_packets, generation)
             coded_packets = self.encoder.create_coded_packet_vector(
                 generation_packets, generation_id=generation, count=redundancy)
             packets_to_send = packets_to_send + generation_packets + coded_packets
-        return packets_to_send
+        return packets_to_send, systematic_packets
 
     def _apply_loss_to_packets(self, packets: list[Packet], loss_rate=0.1):
         number_of_packets = len(packets)
@@ -52,5 +52,5 @@ class BlockBasedRLNC:
             if(index not in lost_packets_index):
                 result = result + [packet]
         # shuffle the packets to emulate the out-of-order delivery
-        random.shuffle(result)
+        # random.shuffle(result)
         return result

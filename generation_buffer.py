@@ -2,8 +2,9 @@ from generation import Generation
 
 
 class GenerationBuffer:
-    def __init__(self):
+    def __init__(self, GF):
         self.buffer: list[Generation | None] = []
+        self.GF = GF
 
     def insert(self, element: Generation, index: int):
         last_element_index = len(self.buffer) - 1
@@ -19,3 +20,14 @@ class GenerationBuffer:
         if(index > len(self.buffer)-1):
             return None
         return self.buffer[index]
+
+    def get_buffer_data(self):
+        result = []
+        for generation in self.buffer:
+            if generation is None:
+                result.append(None)
+                continue
+            if generation.has_recovered:
+                for packet_data in generation.decoded_data:
+                    result = result + [packet_data]
+        return self.GF(result)

@@ -1,3 +1,5 @@
+from http.client import CONTINUE
+from operator import concat
 import numpy as np
 from generation_buffer import GenerationBuffer
 from generation import Generation
@@ -10,7 +12,7 @@ class Decoder:
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
         self.GF = GF
-        self.generation_buffer = GenerationBuffer()
+        self.generation_buffer = GenerationBuffer(GF)
 
     def recover_generation_data(self, packets: list[Packet], generation_id=1):
         generation: list[Packet] = []
@@ -44,6 +46,8 @@ class Decoder:
             print("\n\nERROR: not enough information to decode the original packet!\n")
             print("required additional coded packets: ",
                   generation_size-coefficients_rank)
+            print("E: genSize,gen_id,number_of_packs,redund_pck_mrg,rank", generation_size,
+                  generation_id, number_of_packets, redundant_packet_margin, coefficients_rank)
             return []
 
     def recover_data(self, packets: list[Packet]):
@@ -60,8 +64,17 @@ class Decoder:
                 current_generation = new_generation
 
             else:
-                if(current_generation.has_recovered):
+                if(current_generation.has_recovered or len(current_generation.packets) == generation_size):
                     continue  # skip the packet (packet is redundant)
+
+                future_coefficients = self.GF(current_generation.get_coefficients() +
+                                              [packet.coefficient_vector])
+                future_coefficients_rank = np.linalg.matrix_rank(
+                    future_coefficients)
+                if(len(future_coefficients) == generation_size and future_coefficients_rank != generation_size):
+                    print('\nfound dependant packet, ignore\n')
+                    continue  # not saving the dependant packet for decoding
+
                 current_generation.add_packet(packet)
 
             current_generation_rank = current_generation.get_rank()

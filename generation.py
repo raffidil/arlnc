@@ -4,6 +4,7 @@ import numpy as np
 
 class Generation:
     def __init__(self, generation_size, generation_id, GF):
+        # used for store the packets that their coefficients are linearly independent
         self.packets: list[Packet] = []
         self.generation_size = generation_size
         self.generation_id = generation_id
@@ -24,10 +25,14 @@ class Generation:
     def add_packet(self, packet: Packet):
         self.packets.append(packet)
 
-    def get_rank(self):
+    def get_coefficients(self):
         coefficients = []
         for packet in self.packets:
             coefficients = coefficients + [packet.coefficient_vector]
+        return coefficients
+
+    def get_rank(self):
+        coefficients = self.get_coefficients()
         coefficients = self.GF(coefficients)
         coefficients_rank = np.linalg.matrix_rank(coefficients)
         return coefficients_rank
