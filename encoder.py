@@ -4,6 +4,8 @@ import numpy as np
 import galois
 from os.path import exists
 from packet import Packet
+from generation_buffer import GenerationBuffer
+from generation import Generation
 
 
 class Encoder:
@@ -17,6 +19,8 @@ class Encoder:
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
         self.GF = galois.GF(self.field_order, display="int")
+        self.generation_buffer = GenerationBuffer(
+            GF)  # used for storing systematic packets
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -82,11 +86,26 @@ class Encoder:
         return int(np.ceil(len(packets)/self.generation_size))
 
     def get_packets_by_generation_id(self, packets: list[Packet], generation_id: int) -> list[Packet]:
-        result = []
+        result: list[Packet] = []
         for packet in packets:
             if(packet.generation_id == generation_id):
                 result = result + [packet]
         return result
+
+    def create_systematic_packets_generation_buffer(self, force_to_recreate=False):
+        systematic_packets = self.create_packet_vector(
+            force_to_recreate=force_to_recreate)
+        number_of_generations = self.get_generation_count(
+            systematic_packets)
+
+        for generation_id in range(number_of_generations):
+            generation_packets = self.get_packets_by_generation_id(
+                systematic_packets, generation_id)
+            generation_size = generation_packets[0].generation_size
+            new_generation = Generation(
+                generation_size=generation_size, generation_id=generation_id, packets=generation_packets, GF=self.GF)
+            self.generation_buffer.insert(new_generation, generation_id)
+        return self.generation_buffer
 
     def create_random_coefficient_vector(self, size):
         coefficient_vector = []

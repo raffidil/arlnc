@@ -3,9 +3,9 @@ import numpy as np
 
 
 class Generation:
-    def __init__(self, generation_size, generation_id, GF):
+    def __init__(self, generation_size, generation_id, GF, packets=[]):
         # used for store the packets that their coefficients are linearly independent
-        self.packets: list[Packet] = []
+        self.packets: list[Packet] = packets
         self.generation_size = generation_size
         self.generation_id = generation_id
         self.decoded_data = []
