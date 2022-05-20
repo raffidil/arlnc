@@ -9,7 +9,7 @@ from generation import Generation
 
 
 class Encoder:
-    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384):
+    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384, initial_window_size=4, initial_redundancy=4):
         self.field_order = GF.order
         self.field_degree = int(np.log2(self.field_order))
         if not np.log2(self.field_order).is_integer():
@@ -21,6 +21,12 @@ class Encoder:
         self.GF = galois.GF(self.field_order, display="int")
         self.generation_buffer = GenerationBuffer(
             GF)  # used for storing systematic packets
+        self.generation_count = int(
+            np.ceil(total_size/packet_size/generation_size))
+        self.generation_window_size = initial_window_size
+        self.generation_current_window = []
+        self.generation_window_last_item = -1
+        self.redundancy = initial_redundancy
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -142,3 +148,48 @@ class Encoder:
                 systematic_packets, generation_id)
             coded_packets_list = coded_packets_list + [coded_packet]
         return coded_packets_list
+
+    def get_next_window(self):
+        generation_last_index = self.generation_count - 1
+        next_window = []
+        if(self.generation_window_last_item >= generation_last_index):  # no generation remains
+            next_window = []
+            self.generation_window_last_item = generation_last_index
+        elif(self.generation_window_last_item == -1):  # first window
+            if(self.generation_window_size > self.generation_count):
+                next_window = [i for i in range(0, self.generation_count)]
+                self.generation_window_last_item = generation_last_index
+            else:
+                next_window = [i for i in range(
+                    0, self.generation_window_size)]
+                self.generation_window_last_item = self.generation_window_size-1
+        else:
+            next_first_item = self.generation_window_last_item+1
+            next_last_item = self.generation_window_last_item+self.generation_window_size
+            if(next_last_item > generation_last_index):
+                next_window = [i for i in range(
+                    next_first_item, self.generation_count)]
+                self.generation_window_last_item = generation_last_index
+            else:
+                next_window = [i for i in range(
+                    next_first_item, next_last_item+1)]
+                self.generation_window_last_item = next_last_item
+
+        self.generation_current_window = next_window
+        return next_window
+
+    def update_window_size(self, new_window_size):
+        self.generation_window_size = new_window_size
+
+    def is_all_generations_delivered(self):
+        for i, generation in enumerate(self.generation_buffer.buffer):
+            if(generation.has_delivered != True):
+                return False
+        return True
+
+    def get_generation_by_id(self, generation_id):
+        return self.generation_buffer.get_element(generation_id)
+
+    def update_generation_delivery(self, generation_id, status=True):
+        self.generation_buffer.get_element(
+            generation_id).has_delivered = status

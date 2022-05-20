@@ -94,3 +94,9 @@ class Decoder:
 
             self.generation_buffer.insert(current_generation, generation_id)
         return self.generation_buffer
+
+    def create_response_packet(self):
+        # get last not empty generation id
+        last_received_generation_id = next(s for s in reversed(
+            self.generation_buffer.buffer) if s).generation_id
+        print("last id:", last_received_generation_id)

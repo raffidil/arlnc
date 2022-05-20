@@ -9,8 +9,8 @@ class Generation:
         self.generation_size = generation_size
         self.generation_id = generation_id
         self.decoded_data = []
-        self.has_delivered = False
-        self.has_recovered = False
+        self.has_delivered = False  # used in Encoder
+        self.has_recovered = False  # used in Decoder
         self.GF = GF
 
     def store_decoded_data(self, data):
@@ -19,11 +19,8 @@ class Generation:
     def get_decoded_data(self):
         return self.decoded_data
 
-    def deliver_data(self):
-        self.has_delivered = True
-
     def add_packet(self, packet: Packet):
-        self.packets.append(packet)
+        self.packets = self.packets + [packet]
 
     def get_coefficients(self):
         coefficients = []
