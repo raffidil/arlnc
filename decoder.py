@@ -4,6 +4,7 @@ import numpy as np
 from generation_buffer import GenerationBuffer
 from generation import Generation
 from packet import Packet
+from response_packet import ResponsePacket
 
 
 class Decoder:
@@ -97,6 +98,16 @@ class Decoder:
 
     def create_response_packet(self):
         # get last not empty generation id
+        response_packet = ResponsePacket()
         last_received_generation_id = next(s for s in reversed(
             self.generation_buffer.buffer) if s).generation_id
-        print("last id:", last_received_generation_id)
+        for generation_id in range(last_received_generation_id + 1):
+            generation = self.generation_buffer.get_element(generation_id)
+            if(generation == None):
+                continue
+            # if(generation.has_recovered):
+            #     continue
+            rank = generation.get_rank()
+            generation_size = generation.generation_size
+            response_packet.add_feedback(generation_id, generation_size-rank)
+        return response_packet

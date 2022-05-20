@@ -5,8 +5,9 @@ class Feedback:
 
 
 class ResponsePacket:
-    def __init__(self, feedback_list: list[Feedback]):
+    def __init__(self, feedback_list: list[Feedback] = []):
         self.feedback_list = feedback_list
 
-    def append_feedback(self, generation_id, needed):
-        self.feedback_list.append(Feedback(generation_id, needed))
+    def add_feedback(self, generation_id, needed):
+        self.feedback_list = self.feedback_list + \
+            [Feedback(generation_id, needed)]

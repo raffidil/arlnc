@@ -7,10 +7,11 @@ from encoder import Encoder
 from packet import Packet
 
 from cable import Cable
+from response_packet import ResponsePacket
 
 
 def sender(env: simpy.Environment, cable, encoder: Encoder):
-
+    extra_packets_to_send: list[Packet] = []
     while encoder.is_all_generations_delivered() == False:
         yield env.timeout(1)
         current_generation_window = encoder.get_next_window()
@@ -26,12 +27,42 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                     generation_id=generation_id, count=encoder.redundancy)
                 packets_to_send = packets_to_send + \
                     generation_systematic_packets + generation_coded_packets
+
+        print('\n')
+        if(len(packets_to_send) > 0):
             print('Sender:: send gens:', current_generation_window,
                   "total:", len(packets_to_send), "time:", env.now)
-            cable.put(packets_to_send)
+        if(len(extra_packets_to_send) > 0):
+            print('Sender:: send extra packets:', len(extra_packets_to_send),
+                  "time:", env.now)
 
-        response = yield cable.get()
-        print('Sender receive:', response, "\n")
+        cable.put(packets_to_send+extra_packets_to_send, loss_rate=0.4)
+
+        response: ResponsePacket = yield cable.get()
+
+        if(len(response.feedback_list) > 0 if response.feedback_list else False):
+            extra_packets_to_send: list[Packet] = []
+            print('Sender:: Feedback received from decoder:')
+        for feedback in response.feedback_list:
+            print('gen id:', feedback.generation_id,
+                  'needs', feedback.needed, "packet")
+            generation_id = feedback.generation_id
+            needed = feedback.needed
+            if(needed == 0):  # the generation has been decoded successfully
+                encoder.update_generation_delivery(generation_id, True)
+                continue
+            generation_systematic_packets = encoder.get_generation_by_id(
+                generation_id).packets
+            generation_coded_packets = encoder.create_coded_packet_vector(
+                systematic_packets=generation_systematic_packets,
+                generation_id=generation_id, count=needed)
+            extra_packets_to_send = extra_packets_to_send + generation_coded_packets
+
+            # print('Sender:: send extra:', len(
+            #     extra_packets_to_send), "time:", env.now)
+
+        # cable.put(extra_packets_to_send, loss_rate=0.4)
+
         # print('Sender: Received ACK %d while %s' % (env.now, ack))
         # for index, generation_id in enumerate(current_generation_window):
         #     encoder.update_generation_delivery(generation_id, True)
@@ -42,8 +73,10 @@ def receiver(env, cable, decoder: Decoder):
         # Get event for message pipe
 
         received_packets = yield cable.get()
-        print("Receiver:: total:", len(received_packets), "time:", env.now)
+        print("Receiver:: get total:", len(
+            received_packets), "packets at time:", env.now)
         decoder.recover_data(received_packets)
+        response_packet = decoder.create_response_packet()
         # print([p.generation_id for i, p in enumerate(received_packets)])
         # for i, p in enumerate(received_packets):
         #     print(p.generation_id)
@@ -52,7 +85,7 @@ def receiver(env, cable, decoder: Decoder):
 
         # decoder_buffer = decoder.recover_data(received_packets)
         # print('Receiver: Received this at %d while %s' % (env.now, msg))
-        cable.put('Receiver sent ACK at %d' % env.now)
+        cable.put_response(response_packet)
 
 # ___________________________________________#
 
