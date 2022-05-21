@@ -29,20 +29,20 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                     generation_systematic_packets + generation_coded_packets
 
         print('\n')
-        if(len(packets_to_send) > 0):
-            print('Sender:: send gens:', current_generation_window,
-                  "total:", len(packets_to_send), "time:", env.now)
-        if(len(extra_packets_to_send) > 0):
-            print('Sender:: send extra packets:', len(extra_packets_to_send),
-                  "time:", env.now)
+        new_count = len(packets_to_send)
+        extra_count = len(extra_packets_to_send)
+        total_count = new_count + extra_count
+        print('Sender  :: send gens:', current_generation_window,
+              "new: %d, extra: %d, total: %d - at time(%d)" % (new_count,
+                                                               extra_count, total_count, env.now))
 
-        cable.put(packets_to_send+extra_packets_to_send, loss_rate=0.4)
+        cable.put(packets_to_send+extra_packets_to_send)
 
         response: ResponsePacket = yield cable.get()
 
         if(len(response.feedback_list) > 0 if response.feedback_list else False):
             extra_packets_to_send: list[Packet] = []
-            print('Sender:: Feedback received from decoder:')
+            print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
         for feedback in response.feedback_list:
             print('gen id:', feedback.generation_id,
                   'needs', feedback.needed, "packet")
@@ -57,41 +57,28 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                 systematic_packets=generation_systematic_packets,
                 generation_id=generation_id, count=needed)
             extra_packets_to_send = extra_packets_to_send + generation_coded_packets
-
-            # print('Sender:: send extra:', len(
-            #     extra_packets_to_send), "time:", env.now)
-
-        # cable.put(extra_packets_to_send, loss_rate=0.4)
-
-        # print('Sender: Received ACK %d while %s' % (env.now, ack))
-        # for index, generation_id in enumerate(current_generation_window):
-        #     encoder.update_generation_delivery(generation_id, True)
+        # print('==STATUS', encoder.is_all_generations_delivered())
+        print([g.has_delivered for i, g in enumerate(
+            encoder.generation_buffer.buffer)])
+    print('\n No packets to send, all packets are delivered successfully')
 
 
 def receiver(env, cable, decoder: Decoder):
     while True:
         # Get event for message pipe
-
         received_packets = yield cable.get()
         print("Receiver:: get total:", len(
-            received_packets), "packets at time:", env.now)
+            received_packets), "packets at time(%d)" % env.now)
         decoder.recover_data(received_packets)
         response_packet = decoder.create_response_packet()
-        # print([p.generation_id for i, p in enumerate(received_packets)])
-        # for i, p in enumerate(received_packets):
-        #     print(p.generation_id)
-        # for packet in received_packets:
-        #     decoder.handle_decode(packet)
-
-        # decoder_buffer = decoder.recover_data(received_packets)
-        # print('Receiver: Received this at %d while %s' % (env.now, msg))
+        print("Receiver:: send acknowledgement at time(%d)" % env.now)
         cable.put_response(response_packet)
 
 # ___________________________________________#
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=4250)
+                      packet_size=16, total_size=4250, initial_redundancy=1)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -100,10 +87,11 @@ encode_gen_buff = encoder.create_systematic_packets_generation_buffer(
     force_to_recreate=True)
 
 # Setup and start the simulation
-print('Event Latency')
+print('Start Simulation')
+
 env = simpy.Environment()
 
-cable = Cable(env, 1)
+cable = Cable(env, 1, loss_rate=0.6)
 env.process(sender(env, cable, encoder))
 env.process(receiver(env, cable, decoder))
 

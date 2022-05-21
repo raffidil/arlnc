@@ -104,6 +104,10 @@ class Decoder:
         for generation_id in range(last_received_generation_id + 1):
             generation = self.generation_buffer.get_element(generation_id)
             if(generation == None):
+                print('== gen id %d is not received, fill with needed %d',
+                      (generation_id, self.generation_size))
+                response_packet.add_feedback(
+                    generation_id, self.generation_size)
                 continue
             # if(generation.has_recovered):
             #     continue

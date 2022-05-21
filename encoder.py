@@ -191,5 +191,7 @@ class Encoder:
         return self.generation_buffer.get_element(generation_id)
 
     def update_generation_delivery(self, generation_id, status=True):
-        self.generation_buffer.get_element(
-            generation_id).has_delivered = status
+        generation = self.generation_buffer.get_element(
+            generation_id)
+        generation.has_delivered = status
+        self.generation_buffer.insert(generation, generation_id)
