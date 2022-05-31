@@ -57,9 +57,12 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                 systematic_packets=generation_systematic_packets,
                 generation_id=generation_id, count=needed)
             extra_packets_to_send = extra_packets_to_send + generation_coded_packets
-        # print('==STATUS', encoder.is_all_generations_delivered())
-        print([g.has_delivered for i, g in enumerate(
-            encoder.generation_buffer.buffer)])
+
+            # update the last received feedback generation id
+            # to keep track the generation delivery image of the Decoder
+            if(feedback.generation_id > encoder.last_received_feedback_gen_id):
+                encoder.update_last_received_feedback_gen_id(
+                    feedback.generation_id)
     print('\n No packets to send, all packets are delivered successfully')
 
 
@@ -91,8 +94,11 @@ print('Start Simulation')
 
 env = simpy.Environment()
 
-cable = Cable(env, 1, loss_rate=0.6)
+cable = Cable(env, 1, loss_rate=0.95)
 env.process(sender(env, cable, encoder))
 env.process(receiver(env, cable, decoder))
 
 env.run()
+
+# to do
+# - change redundancy and window dynamic

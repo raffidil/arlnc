@@ -25,8 +25,8 @@ class Encoder:
             np.ceil(total_size/packet_size/generation_size))
         self.generation_window_size = initial_window_size
         self.generation_current_window = []
-        self.generation_window_last_item = -1
         self.redundancy = initial_redundancy
+        self.last_received_feedback_gen_id = -1
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -150,30 +150,28 @@ class Encoder:
         return coded_packets_list
 
     def get_next_window(self):
+        # calculate the next generation window with size of window_size
+        # from the highest received feedback gen_id
+        # objective: (until at least one packet from each generation has received to the decoder)
         generation_last_index = self.generation_count - 1
         next_window = []
-        if(self.generation_window_last_item >= generation_last_index):  # no generation remains
+        if(self.last_received_feedback_gen_id >= generation_last_index):  # no generation remains
             next_window = []
-            self.generation_window_last_item = generation_last_index
-        elif(self.generation_window_last_item == -1):  # first window
+        elif(self.last_received_feedback_gen_id == -1):  # first window
             if(self.generation_window_size > self.generation_count):
                 next_window = [i for i in range(0, self.generation_count)]
-                self.generation_window_last_item = generation_last_index
             else:
                 next_window = [i for i in range(
                     0, self.generation_window_size)]
-                self.generation_window_last_item = self.generation_window_size-1
         else:
-            next_first_item = self.generation_window_last_item+1
-            next_last_item = self.generation_window_last_item+self.generation_window_size
+            next_first_item = self.last_received_feedback_gen_id+1
+            next_last_item = self.last_received_feedback_gen_id+self.generation_window_size
             if(next_last_item > generation_last_index):
                 next_window = [i for i in range(
                     next_first_item, self.generation_count)]
-                self.generation_window_last_item = generation_last_index
             else:
                 next_window = [i for i in range(
                     next_first_item, next_last_item+1)]
-                self.generation_window_last_item = next_last_item
 
         self.generation_current_window = next_window
         return next_window
@@ -195,3 +193,6 @@ class Encoder:
             generation_id)
         generation.has_delivered = status
         self.generation_buffer.insert(generation, generation_id)
+
+    def update_last_received_feedback_gen_id(self, last_received_gen_id: int):
+        self.last_received_feedback_gen_id = last_received_gen_id
