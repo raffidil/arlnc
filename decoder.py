@@ -66,6 +66,9 @@ class Decoder:
 
             else:
                 if(current_generation.has_recovered or len(current_generation.packets) == generation_size):
+                    current_generation.increase_number_of_received_packets()
+                    self.generation_buffer.insert(
+                        current_generation, generation_id)
                     # skip the packet (packet is redundant), all data has recovered before
                     continue
 
@@ -92,7 +95,7 @@ class Decoder:
                     recovered_generation_data)
             # else:
                 # to do: restart timer for gen i
-
+            current_generation.increase_number_of_received_packets()
             self.generation_buffer.insert(current_generation, generation_id)
         return self.generation_buffer
 
@@ -111,7 +114,8 @@ class Decoder:
                 continue
             # if(generation.has_recovered):
             #     continue
-            rank = generation.get_rank()
+            # rank = generation.get_rank()
             generation_size = generation.generation_size
-            response_packet.add_feedback(generation_id, generation_size-rank)
+            response_packet.add_feedback(
+                generation_id, generation_size-generation.number_of_received_packets)
         return response_packet

@@ -4,14 +4,18 @@ import numpy as np
 
 class Generation:
     def __init__(self, generation_size, generation_id, GF, packets=[]):
-        # used for store the packets that their coefficients are linearly independent
+        # in decoder: used for store the packets that their coefficients are linearly independent
         self.packets: list[Packet] = packets
         self.generation_size = generation_size
         self.generation_id = generation_id
         self.decoded_data = []
         self.has_delivered = False  # used in Encoder
         self.has_recovered = False  # used in Decoder
+        self.number_of_received_packets = 0
         self.GF = GF
+
+    def increase_number_of_received_packets(self):
+        self.number_of_received_packets += 1
 
     def store_decoded_data(self, data):
         self.decoded_data = data

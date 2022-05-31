@@ -48,8 +48,11 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                   'needs', feedback.needed, "packet")
             generation_id = feedback.generation_id
             needed = feedback.needed
-            if(needed == 0):  # the generation has been decoded successfully
+            if(needed <= 0):  # the generation has been decoded successfully
                 encoder.update_generation_delivery(generation_id, True)
+                if(feedback.generation_id > encoder.last_received_feedback_gen_id):
+                    encoder.update_last_received_feedback_gen_id(
+                        feedback.generation_id)
                 continue
             generation_systematic_packets = encoder.get_generation_by_id(
                 generation_id).packets
@@ -81,7 +84,7 @@ def receiver(env, cable, decoder: Decoder):
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=4250, initial_redundancy=1)
+                      packet_size=16, total_size=4250, initial_redundancy=4)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -94,7 +97,7 @@ print('Start Simulation')
 
 env = simpy.Environment()
 
-cable = Cable(env, 1, loss_rate=0.95)
+cable = Cable(env, 1, loss_rate=0.4)
 env.process(sender(env, cable, encoder))
 env.process(receiver(env, cable, decoder))
 
@@ -102,3 +105,7 @@ env.run()
 
 # to do
 # - change redundancy and window dynamic
+#   - calculate the next window size from current response
+#     (number of extra packets that corresponds the network loss rate)
+#   - calculate the redundancy size from current response needed packets count
+# - prepare the whole generation if the needed is higher than generation_loss_threshold for next transmission
