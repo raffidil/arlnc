@@ -6,6 +6,7 @@ from os.path import exists
 from packet import Packet
 from generation_buffer import GenerationBuffer
 from generation import Generation
+from response_packet import Feedback
 
 
 class Encoder:
@@ -196,3 +197,31 @@ class Encoder:
 
     def update_last_received_feedback_gen_id(self, last_received_gen_id: int):
         self.last_received_feedback_gen_id = last_received_gen_id
+
+    def update_encoding_redundancy_by_response(self, feedback_list: list[Feedback]):
+        # update the encoding redundancy according to the feedback response
+        # if the average of received response feedbacks (needed) of current generation
+        # is positive: increase one, if it's negative: decrease one
+        needed_sum = 0
+        number_of_responses_in_current_window = 0
+        average_additional_redundancy = 0
+        # extracting the needed response belonging to the last generation window
+        for index, feedback in enumerate(feedback_list):
+            if feedback.generation_id in self.generation_current_window:
+                needed_sum = needed_sum + feedback.needed
+                number_of_responses_in_current_window += 1
+
+        if(number_of_responses_in_current_window == 0 and len(self.generation_current_window) > 0):
+            average_additional_redundancy = self.generation_size
+
+        if(number_of_responses_in_current_window > 0):
+            average_additional_redundancy = int(
+                np.ceil(needed_sum/number_of_responses_in_current_window))
+
+        if(average_additional_redundancy > 0):
+            self.redundancy += 1
+        elif(average_additional_redundancy < 0):
+            self.redundancy -= 1
+
+        # print('new redundancy:', self.redundancy, 'average_additional_redundancy:',
+        #       average_additional_redundancy, 'res window size:', number_of_responses_in_current_window)

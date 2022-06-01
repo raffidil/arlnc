@@ -20,6 +20,7 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
         if(len(current_generation_window) > 0):
             # create systematic and coded packets of the current window
             for index, generation_id in enumerate(current_generation_window):
+                print('*** current redundancy:', encoder.redundancy)
                 generation_systematic_packets = encoder.get_generation_by_id(
                     generation_id).packets
                 generation_coded_packets = encoder.create_coded_packet_vector(
@@ -43,6 +44,9 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
         if(len(response.feedback_list) > 0 if response.feedback_list else False):
             extra_packets_to_send: list[Packet] = []
             print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
+            encoder.update_encoding_redundancy_by_response(
+                response.feedback_list)
+
         for feedback in response.feedback_list:
             print('gen id:', feedback.generation_id,
                   'needs', feedback.needed, "packet")
@@ -84,7 +88,8 @@ def receiver(env, cable, decoder: Decoder):
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=4250, initial_redundancy=4)
+                      packet_size=16, total_size=16384,
+                      initial_redundancy=1, initial_window_size=4)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -97,7 +102,7 @@ print('Start Simulation')
 
 env = simpy.Environment()
 
-cable = Cable(env, 1, loss_rate=0.4)
+cable = Cable(env, 1, loss_rate=0.6)
 env.process(sender(env, cable, encoder))
 env.process(receiver(env, cable, decoder))
 
@@ -107,5 +112,5 @@ env.run()
 # - change redundancy and window dynamic
 #   - calculate the next window size from current response
 #     (number of extra packets that corresponds the network loss rate)
-#   - calculate the redundancy size from current response needed packets count
-# - prepare the whole generation if the needed is higher than generation_loss_threshold for next transmission
+# - prepare the whole generation if the needed is higher than generation_loss_threshold for next transmission (test with loss=0.95 and R=1)
+# - dynamic loss
