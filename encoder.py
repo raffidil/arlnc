@@ -28,6 +28,8 @@ class Encoder:
         self.generation_current_window = []
         self.redundancy = initial_redundancy
         self.last_received_feedback_gen_id = -1
+        self.max_redundancy = generation_size
+        self.redundancy_behavior = 0
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -150,23 +152,24 @@ class Encoder:
             coded_packets_list = coded_packets_list + [coded_packet]
         return coded_packets_list
 
-    def get_next_window(self):
+    def get_next_window(self, window_size=None):
         # calculate the next generation window with size of window_size
         # from the highest received feedback gen_id
         # objective: (until at least one packet from each generation has received to the decoder)
+        size = window_size or self.generation_window_size
         generation_last_index = self.generation_count - 1
         next_window = []
         if(self.last_received_feedback_gen_id >= generation_last_index):  # no generation remains
             next_window = []
         elif(self.last_received_feedback_gen_id == -1):  # first window
-            if(self.generation_window_size > self.generation_count):
+            if(size > self.generation_count):
                 next_window = [i for i in range(0, self.generation_count)]
             else:
                 next_window = [i for i in range(
-                    0, self.generation_window_size)]
+                    0, size)]
         else:
             next_first_item = self.last_received_feedback_gen_id+1
-            next_last_item = self.last_received_feedback_gen_id+self.generation_window_size
+            next_last_item = self.last_received_feedback_gen_id+size
             if(next_last_item > generation_last_index):
                 next_window = [i for i in range(
                     next_first_item, self.generation_count)]
@@ -176,9 +179,6 @@ class Encoder:
 
         self.generation_current_window = next_window
         return next_window
-
-    def update_window_size(self, new_window_size):
-        self.generation_window_size = new_window_size
 
     def is_all_generations_delivered(self):
         for i, generation in enumerate(self.generation_buffer.buffer):
@@ -198,7 +198,7 @@ class Encoder:
     def update_last_received_feedback_gen_id(self, last_received_gen_id: int):
         self.last_received_feedback_gen_id = last_received_gen_id
 
-    def update_encoding_redundancy_by_response(self, feedback_list: list[Feedback]):
+    def update_encoding_redundancy_and_window_size_by_response(self, feedback_list: list[Feedback]):
         # update the encoding redundancy according to the feedback response
         # if the average of received response feedbacks (needed) of current generation
         # is positive: increase one, if it's negative: decrease one
@@ -218,10 +218,28 @@ class Encoder:
             average_additional_redundancy = int(
                 np.ceil(needed_sum/number_of_responses_in_current_window))
 
+        print('&&& avg redundancy:', average_additional_redundancy)
         if(average_additional_redundancy > 0):
-            self.redundancy += 1
+            if(self.redundancy < self.max_redundancy):  # prevent to grow redundancy
+                self.redundancy += 1
+            self.redundancy_behavior += 1
         elif(average_additional_redundancy < 0):
             self.redundancy -= 1
+            self.redundancy_behavior -= 1
+        else:  # when everything is OK, increase the window for exploration
+            self.generation_window_size += 1
+
+        if(self.redundancy == self.max_redundancy):
+            self.generation_window_size -= 1
+
+        if(self.redundancy_behavior >= 2):
+            self.generation_window_size -= 1
+            if(self.redundancy > 1):
+                self.redundancy -= 1
+            self.redundancy_behavior = 0
+        elif(self.redundancy_behavior <= -2):
+            self.generation_window_size += 1
+            self.redundancy_behavior = 0
 
         # print('new redundancy:', self.redundancy, 'average_additional_redundancy:',
         #       average_additional_redundancy, 'res window size:', number_of_responses_in_current_window)

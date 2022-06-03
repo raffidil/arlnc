@@ -44,7 +44,7 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
         if(len(response.feedback_list) > 0 if response.feedback_list else False):
             extra_packets_to_send: list[Packet] = []
             print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
-            encoder.update_encoding_redundancy_by_response(
+            encoder.update_encoding_redundancy_and_window_size_by_response(
                 response.feedback_list)
 
         for feedback in response.feedback_list:
