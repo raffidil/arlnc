@@ -19,8 +19,8 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
 
         if(len(current_generation_window) > 0):
             # create systematic and coded packets of the current window
+            print('*** current redundancy:', encoder.redundancy)
             for index, generation_id in enumerate(current_generation_window):
-                print('*** current redundancy:', encoder.redundancy)
                 generation_systematic_packets = encoder.get_generation_by_id(
                     generation_id).packets
                 generation_coded_packets = encoder.create_coded_packet_vector(
@@ -48,8 +48,8 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
                 response.feedback_list)
 
         for feedback in response.feedback_list:
-            print('gen id:', feedback.generation_id,
-                  'needs', feedback.needed, "packet")
+            # print('gen id:', feedback.generation_id,
+            #       'needs', feedback.needed, "packet")
             generation_id = feedback.generation_id
             needed = feedback.needed
             if(needed <= 0):  # the generation has been decoded successfully
@@ -88,8 +88,8 @@ def receiver(env, cable, decoder: Decoder):
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=16384,
-                      initial_redundancy=1, initial_window_size=4)
+                      packet_size=16, total_size=32768,
+                      initial_redundancy=4, initial_window_size=4)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -102,7 +102,7 @@ print('Start Simulation')
 
 env = simpy.Environment()
 
-cable = Cable(env, 1, loss_rate=0.6)
+cable = Cable(env, 1, loss_mode="exponential", exponential_loss_param=0.05)
 env.process(sender(env, cable, encoder))
 env.process(receiver(env, cable, decoder))
 
@@ -114,3 +114,4 @@ env.run()
 #     (number of extra packets that corresponds the network loss rate)
 # - prepare the whole generation if the needed is higher than generation_loss_threshold for next transmission (test with loss=0.95 and R=1)
 # - dynamic loss
+# - add analytics
