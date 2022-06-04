@@ -52,6 +52,9 @@ class Decoder:
             return []
 
     def recover_data(self, packets: list[Packet]):
+        effective_packets_count = 0
+        linearly_dependent_count = 0  # packets that don't have decoding value
+        redundant_count = 0  # packets that their generation had decoded
         for packet in packets:
             generation_id = packet.generation_id
             generation_size = packet.generation_size
@@ -69,6 +72,7 @@ class Decoder:
                     current_generation.increase_number_of_received_packets()
                     self.generation_buffer.insert(
                         current_generation, generation_id)
+                    redundant_count += 1
                     # skip the packet (packet is redundant), all data has recovered before
                     continue
 
@@ -79,6 +83,7 @@ class Decoder:
 
                 if(len(next_coefficients) != next_coefficients_rank):
                     print('\npacket is dependant to previous ones, drop\n')
+                    linearly_dependent_count += 1
                     continue  # not saving the dependant packet for decoding
 
                 current_generation.add_packet(packet)
@@ -97,7 +102,8 @@ class Decoder:
                 # to do: restart timer for gen i
             current_generation.increase_number_of_received_packets()
             self.generation_buffer.insert(current_generation, generation_id)
-        return self.generation_buffer
+            effective_packets_count += 1
+        return effective_packets_count, linearly_dependent_count, redundant_count, self.generation_buffer
 
     def create_response_packet(self):
         # get last not empty generation id

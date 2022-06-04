@@ -62,8 +62,8 @@ def sender(env: simpy.Environment, cable, encoder: Encoder, analytics: Analytics
                             type="feedback")
 
         for feedback in response.feedback_list:
-            # print('gen id:', feedback.generation_id,
-            #       'needs', feedback.needed, "packet")
+            print('gen id:', feedback.generation_id,
+                  'needs', feedback.needed, "packet")
             generation_id = feedback.generation_id
             needed = feedback.needed
             if(needed <= 0):  # the generation has been decoded successfully
@@ -91,13 +91,17 @@ def receiver(env, cable, decoder: Decoder, analytics: Analytics):
     while True:
         # Get event for message pipe
         received_packets = yield cable.get()
+        effective, linearly_dependent, redundant, buff = decoder.recover_data(
+            received_packets)
         print("Receiver:: get total:", len(
-            received_packets), "packets at time(%d)" % env.now)
-        decoder.recover_data(received_packets)
+            received_packets), " & effective:", effective, "packets at time(%d)" % env.now)
         response_packet = decoder.create_response_packet()
         print("Receiver:: send acknowledgement at time(%d)" % env.now)
         analytics.track(time=env.now,
-                        received_packets_count=len(received_packets),
+                        received_packets=len(received_packets),
+                        effective_packets=effective,
+                        linearly_dependent_packets=linearly_dependent,
+                        redundant_packets=redundant,
                         type="receive")
         cable.put_response(response_packet)
 
@@ -105,8 +109,8 @@ def receiver(env, cable, decoder: Decoder, analytics: Analytics):
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=8192,
-                      initial_redundancy=4, initial_window_size=2)
+                      packet_size=16, total_size=16384,
+                      initial_redundancy=10, initial_window_size=4)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -129,15 +133,15 @@ env.run()
 
 analytics_data = analytics.get_analytics()
 for index, record in enumerate(analytics_data):
-    if(record.type == 'send'):
-        print(
-            f'time: {record.time} - SEND - loss rate: {record.loss_rate} - redundancy: {record.redundancy} - window size: {record.window_size} - new,extra,total: {record.new_coded_packets_count},{record.extra_packets_count},{record.extra_packets_count+record.new_coded_packets_count} - window: {record.generation_window}')
-    if(record.type == 'feedback'):
-        print(
-            f'time: {record.time} - FEEDBACK - avg. needed red: {record.average_needed_packets} - redundancy: {record.redundancy}')
+    # if(record.type == 'send'):
+    #     print(
+    #         f'time: {record.time} - SEND - loss rate: {record.loss_rate} - redundancy: {record.redundancy} - window size: {record.window_size} - new,extra,total: {record.new_coded_packets_count},{record.extra_packets_count},{record.extra_packets_count+record.new_coded_packets_count} - window: {record.generation_window}')
+    # if(record.type == 'feedback'):
+    #     print(
+    #         f'time: {record.time} - FEEDBACK - avg. needed red: {record.average_needed_packets} - redundancy: {record.redundancy}')
     if(record.type == 'receive'):
         print(
-            f'time: {record.time} - RECEIVE - received count: {record.received_packets_count}')
+            f'time: {record.time} - RECEIVE - received: {record.received_packets} - effectiveness: {np.round(record.effective_packets/record.received_packets,2)} - lin. dependant: {record.linearly_dependent_packets} - redundant: {record.redundant_packets}')
 print('--- END ---')
 
 # to do

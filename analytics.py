@@ -7,9 +7,13 @@ class Record:
                  average_needed_packets=None,  # average_redundancy
                  generation_size=None,
                  loss_rate=None,
-                 received_packets_count=None,
                  new_coded_packets_count=None,
-                 extra_packets_count=None):
+                 extra_packets_count=None,
+                 # decoder
+                 received_packets=None,
+                 effective_packets=None,
+                 linearly_dependent_packets=None,
+                 redundant_packets=None):
         self.time = time
         self.type = type
         self.redundancy = redundancy
@@ -18,9 +22,12 @@ class Record:
         self.average_needed_packets = average_needed_packets
         self.generation_size = generation_size
         self.loss_rate = loss_rate
-        self.received_packets_count = received_packets_count
         self.new_coded_packets_count = new_coded_packets_count
         self.extra_packets_count = extra_packets_count
+        self.received_packets = received_packets
+        self.effective_packets = effective_packets
+        self.linearly_dependent_packets = linearly_dependent_packets
+        self.redundant_packets = redundant_packets
 
 
 class Analytics:
@@ -43,9 +50,13 @@ class Analytics:
               average_needed_packets=None,  # average_redundancy
               generation_size=None,
               loss_rate=None,
-              received_packets_count=None,
               new_coded_packets_count=None,
-              extra_packets_count=None):
+              extra_packets_count=None,
+              # decoder
+              received_packets=None,
+              effective_packets=None,
+              linearly_dependent_packets=None,
+              redundant_packets=None):
         record = self.get_record(time)
         record.type = type
         record.redundancy = redundancy
@@ -54,9 +65,12 @@ class Analytics:
         record.average_needed_packets = average_needed_packets
         record.generation_size = generation_size
         record.loss_rate = loss_rate
-        record.received_packets_count = received_packets_count
         record.new_coded_packets_count = new_coded_packets_count
         record.extra_packets_count = extra_packets_count
+        record.received_packets = received_packets
+        record.effective_packets = effective_packets
+        record.linearly_dependent_packets = linearly_dependent_packets
+        record.redundant_packets = redundant_packets
         self.insert_record(record=record, time=time)
 
     def get_record(self, time=0):

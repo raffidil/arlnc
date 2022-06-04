@@ -11,8 +11,8 @@ def apply_loss_to_packets(packets: list, loss_rate=0, loss_mode="constant", expo
     if(loss_mode == "constant"):
         applied_loss_rate = loss_rate
     elif(loss_mode == "exponential"):
-        applied_loss_rate = (
-            2**(exponential_loss_param*number_of_packets)-1)/100
+        applied_loss_rate = np.round((
+            2**(exponential_loss_param*number_of_packets)-1)/100, 3)
 
     if(applied_loss_rate > 1):
         applied_loss_rate = 1
