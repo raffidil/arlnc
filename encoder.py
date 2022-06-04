@@ -202,6 +202,8 @@ class Encoder:
         # update the encoding redundancy according to the feedback response
         # if the average of received response feedbacks (needed) of current generation
         # is positive: increase one, if it's negative: decrease one
+        redundancy_behavior_threshold = int(
+            np.floor(self.generation_size*0.25))
         needed_sum = 0
         number_of_responses_in_current_window = 0
         average_additional_redundancy = 0
@@ -235,12 +237,12 @@ class Encoder:
         if(self.redundancy == self.max_redundancy):
             self.generation_window_size -= 1
 
-        if(self.redundancy_behavior >= 2):
+        if(self.redundancy_behavior >= redundancy_behavior_threshold):
             self.generation_window_size -= 1
             if(self.redundancy > 1):
                 self.redundancy -= 1
             self.redundancy_behavior = 0
-        elif(self.redundancy_behavior <= -2):
+        elif(self.redundancy_behavior <= -redundancy_behavior_threshold):
             self.generation_window_size += 1
             self.redundancy_behavior = 0
 
