@@ -1,11 +1,14 @@
 import galois
+import simpy
 from decoder import Decoder
 from encoder import Encoder
 from packet import Packet
 
-from numpy.random import default_rng
 import numpy as np
-import random
+
+from analytics import Analytics
+from cable import Cable
+from response_packet import ResponsePacket
 
 
 class BlockBasedRLNC:
@@ -28,31 +31,122 @@ class BlockBasedRLNC:
     def get_decoder(self):
         return self.decoder
 
-    def _prepare_data_to_send(self, force_to_recreate=False, redundancy=1) -> tuple[list[Packet], list[Packet]]:
-        systematic_packets = self.encoder.create_packet_vector(
-            force_to_recreate=force_to_recreate)
-        number_of_generations = self.encoder.get_generation_count(
-            systematic_packets)
+    def sender(self, env: simpy.Environment, cable, encoder: Encoder, analytics: Analytics):
+        extra_packets_to_send: list[Packet] = []
+        while encoder.is_all_generations_delivered() == False:
+            yield env.timeout(1)
+            current_generation_window = encoder.get_next_window()
 
-        packets_to_send: list[Packet] = []
-        for generation in range(number_of_generations):
-            generation_packets = self.encoder.get_packets_by_generation_id(
-                systematic_packets, generation)
-            coded_packets = self.encoder.create_coded_packet_vector(
-                generation_packets, generation_id=generation, count=redundancy)
-            packets_to_send = packets_to_send + generation_packets + coded_packets
-        return packets_to_send, systematic_packets
+            packets_to_send: list[Packet] = []
 
-    def _apply_loss_to_packets(self, packets: list[Packet], loss_rate=0.1):
-        number_of_packets = len(packets)
-        number_of_lost_packets = int(np.ceil(number_of_packets*loss_rate))
-        rng = default_rng()
-        lost_packets_index = rng.choice(
-            number_of_packets, size=number_of_lost_packets, replace=False)
-        result = []
-        for index, packet in enumerate(packets):
-            if(index not in lost_packets_index):
-                result = result + [packet]
-        # shuffle the packets to emulate the out-of-order delivery
-        # random.shuffle(result)
-        return result
+            if(len(current_generation_window) > 0):
+                # create systematic and coded packets of the current window
+                print('*** current redundancy:', encoder.redundancy)
+                for index, generation_id in enumerate(current_generation_window):
+                    generation_systematic_packets = encoder.get_generation_by_id(
+                        generation_id).packets
+                    generation_coded_packets = encoder.create_coded_packet_vector(
+                        systematic_packets=generation_systematic_packets,
+                        generation_id=generation_id, count=encoder.redundancy)
+                    packets_to_send = packets_to_send + \
+                        generation_systematic_packets + generation_coded_packets
+
+            print('\n')
+            new_count = len(packets_to_send)
+            extra_count = len(extra_packets_to_send)
+            total_count = new_count + extra_count
+            print('Sender  :: send gens:', current_generation_window,
+                  "new: %d, extra: %d, total: %d - at time(%d)" % (new_count,
+                                                                   extra_count, total_count, env.now))
+
+            loss_rate = cable.put(packets_to_send+extra_packets_to_send)
+            analytics.track(time=env.now,
+                            redundancy=encoder.redundancy,
+                            window_size=encoder.generation_window_size,
+                            generation_window=current_generation_window,
+                            loss_rate=loss_rate,
+                            extra_packets_count=extra_count,
+                            new_coded_packets_count=new_count,
+                            type="send")
+
+            response: ResponsePacket = yield cable.get()
+
+            if(len(response.feedback_list) > 0 if response.feedback_list else False):
+                extra_packets_to_send: list[Packet] = []
+                print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
+                average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response(
+                    response.feedback_list)
+                analytics.track(time=env.now,
+                                redundancy=encoder.redundancy,
+                                average_needed_packets=average_additional_redundancy,
+                                type="feedback")
+
+            for feedback in response.feedback_list:
+                print('gen id:', feedback.generation_id,
+                      'needs', feedback.needed, "packet")
+                generation_id = feedback.generation_id
+                needed = feedback.needed
+                if(needed <= 0):  # the generation has been decoded successfully
+                    encoder.update_generation_delivery(generation_id, True)
+                    if(feedback.generation_id > encoder.last_received_feedback_gen_id):
+                        encoder.update_last_received_feedback_gen_id(
+                            feedback.generation_id)
+                    continue
+                generation_systematic_packets = encoder.get_generation_by_id(
+                    generation_id).packets
+                generation_coded_packets = encoder.create_coded_packet_vector(
+                    systematic_packets=generation_systematic_packets,
+                    generation_id=generation_id, count=needed)
+                extra_packets_to_send = extra_packets_to_send + generation_coded_packets
+
+                # update the last received feedback generation id
+                # to keep track the generation delivery image of the Decoder
+                if(feedback.generation_id > encoder.last_received_feedback_gen_id):
+                    encoder.update_last_received_feedback_gen_id(
+                        feedback.generation_id)
+        print('\n No packets to send, all packets are delivered successfully')
+
+    def receiver(self, env, cable, decoder: Decoder, analytics: Analytics):
+        while True:
+            # Get event for message pipe
+            received_packets = yield cable.get()
+            effective, linearly_dependent, redundant, buff = decoder.recover_data(
+                received_packets)
+            print("Receiver:: get total:", len(
+                received_packets), " & effective:", effective, "packets at time(%d)" % env.now)
+            response_packet = decoder.create_response_packet()
+            print("Receiver:: send acknowledgement at time(%d)" % env.now)
+            analytics.track(time=env.now,
+                            received_packets=len(received_packets),
+                            effective_packets=effective,
+                            linearly_dependent_packets=linearly_dependent,
+                            redundant_packets=redundant,
+                            type="receive")
+            cable.put_response(response_packet)
+
+    def initialize_packets(self):
+        print('Initializing packets...')
+        encode_gen_buff = self.encoder.create_systematic_packets_generation_buffer(
+            force_to_recreate=True)
+        return encode_gen_buff
+
+    def run_simulation(self):
+        encoder = self.get_encoder()
+        decoder = self.get_decoder()
+
+        self.initialize_packets()
+        # Setup and start the simulation
+        print('Starting the simulation...')
+
+        env = simpy.Environment()
+        analytics = Analytics()
+
+        cable = Cable(env, 1, loss_mode="exponential",
+                      exponential_loss_param=0.05)
+        env.process(self.sender(env, cable, encoder, analytics))
+        env.process(self.receiver(env, cable, decoder, analytics))
+
+        env.run()
+
+        analytics_data = analytics.get_analytics()
+        return analytics_data
