@@ -1,6 +1,7 @@
 
 import simpy
 import numpy as np
+from analytics import Analytics
 from block_based_rlnc import BlockBasedRLNC
 from decoder import Decoder
 from encoder import Encoder
@@ -10,11 +11,12 @@ from cable import Cable
 from response_packet import ResponsePacket
 
 
-def sender(env: simpy.Environment, cable, encoder: Encoder):
+def sender(env: simpy.Environment, cable, encoder: Encoder, analytics: Analytics):
     extra_packets_to_send: list[Packet] = []
     while encoder.is_all_generations_delivered() == False:
         yield env.timeout(1)
         current_generation_window = encoder.get_next_window()
+
         packets_to_send: list[Packet] = []
 
         if(len(current_generation_window) > 0):
@@ -37,15 +39,27 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
               "new: %d, extra: %d, total: %d - at time(%d)" % (new_count,
                                                                extra_count, total_count, env.now))
 
-        cable.put(packets_to_send+extra_packets_to_send)
+        loss_rate = cable.put(packets_to_send+extra_packets_to_send)
+        analytics.track(time=env.now,
+                        redundancy=encoder.redundancy,
+                        window_size=encoder.generation_window_size,
+                        generation_window=current_generation_window,
+                        loss_rate=loss_rate,
+                        extra_packets_count=extra_count,
+                        new_coded_packets_count=new_count,
+                        type="send")
 
         response: ResponsePacket = yield cable.get()
 
         if(len(response.feedback_list) > 0 if response.feedback_list else False):
             extra_packets_to_send: list[Packet] = []
             print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
-            encoder.update_encoding_redundancy_and_window_size_by_response(
+            average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response(
                 response.feedback_list)
+            analytics.track(time=env.now,
+                            redundancy=encoder.redundancy,
+                            average_needed_packets=average_additional_redundancy,
+                            type="feedback")
 
         for feedback in response.feedback_list:
             # print('gen id:', feedback.generation_id,
@@ -73,7 +87,7 @@ def sender(env: simpy.Environment, cable, encoder: Encoder):
     print('\n No packets to send, all packets are delivered successfully')
 
 
-def receiver(env, cable, decoder: Decoder):
+def receiver(env, cable, decoder: Decoder, analytics: Analytics):
     while True:
         # Get event for message pipe
         received_packets = yield cable.get()
@@ -82,14 +96,17 @@ def receiver(env, cable, decoder: Decoder):
         decoder.recover_data(received_packets)
         response_packet = decoder.create_response_packet()
         print("Receiver:: send acknowledgement at time(%d)" % env.now)
+        analytics.track(time=env.now,
+                        received_packets_count=len(received_packets),
+                        type="receive")
         cable.put_response(response_packet)
 
 # ___________________________________________#
 
 
 rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=32768,
-                      initial_redundancy=4, initial_window_size=4)
+                      packet_size=16, total_size=8192,
+                      initial_redundancy=4, initial_window_size=2)
 encoder = rlnc.get_encoder()
 decoder = rlnc.get_decoder()
 
@@ -101,12 +118,27 @@ encode_gen_buff = encoder.create_systematic_packets_generation_buffer(
 print('Start Simulation')
 
 env = simpy.Environment()
+analytics = Analytics()
 
-cable = Cable(env, 1, loss_mode="exponential", exponential_loss_param=0.05)
-env.process(sender(env, cable, encoder))
-env.process(receiver(env, cable, decoder))
+cable = Cable(env, 1, loss_mode="exponential",
+              exponential_loss_param=0.05)
+env.process(sender(env, cable, encoder, analytics))
+env.process(receiver(env, cable, decoder, analytics))
 
 env.run()
+
+analytics_data = analytics.get_analytics()
+for index, record in enumerate(analytics_data):
+    if(record.type == 'send'):
+        print(
+            f'time: {record.time} - SEND - loss rate: {record.loss_rate} - redundancy: {record.redundancy} - window size: {record.window_size} - new,extra,total: {record.new_coded_packets_count},{record.extra_packets_count},{record.extra_packets_count+record.new_coded_packets_count} - window: {record.generation_window}')
+    if(record.type == 'feedback'):
+        print(
+            f'time: {record.time} - FEEDBACK - avg. needed red: {record.average_needed_packets} - redundancy: {record.redundancy}')
+    if(record.type == 'receive'):
+        print(
+            f'time: {record.time} - RECEIVE - received count: {record.received_packets_count}')
+print('--- END ---')
 
 # to do
 # - change redundancy and window dynamic

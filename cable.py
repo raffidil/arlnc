@@ -17,8 +17,7 @@ def apply_loss_to_packets(packets: list, loss_rate=0, loss_mode="constant", expo
     if(applied_loss_rate > 1):
         applied_loss_rate = 1
     number_of_lost_packets = int(np.ceil(number_of_packets*applied_loss_rate))
-    print('@@@ cable loss rate:', applied_loss_rate,
-          ', count:', number_of_packets)
+
     if(len(packets) == 0):
         return []
     if(number_of_lost_packets == number_of_packets and applied_loss_rate < 1):
@@ -33,7 +32,7 @@ def apply_loss_to_packets(packets: list, loss_rate=0, loss_mode="constant", expo
             result = result + [packet]
     # shuffle the packets to emulate the out-of-order delivery
     # random.shuffle(result)
-    return result
+    return result, applied_loss_rate
 
 
 class Cable(object):
@@ -50,11 +49,13 @@ class Cable(object):
         self.store.put(value)
 
     def put(self, value, loss_rate=None):
-        loss_applied_packets = apply_loss_to_packets(
+        loss_applied_packets, applied_loss_rate = apply_loss_to_packets(
             value, loss_rate=loss_rate or self.loss_rate,
             loss_mode=self.loss_mode,
             exponential_loss_param=self.exponential_loss_param)
+        print('@@@ cable loss rate:', applied_loss_rate, ', time:', self.env.now)
         self.env.process(self.latency(loss_applied_packets))
+        return applied_loss_rate
 
     # TEMPORARY: separate from put to insure reliable delivery (no loss)
     def put_response(self, value):

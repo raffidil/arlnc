@@ -219,13 +219,16 @@ class Encoder:
                 np.ceil(needed_sum/number_of_responses_in_current_window))
 
         print('&&& avg redundancy:', average_additional_redundancy)
+
         if(average_additional_redundancy > 0):
             if(self.redundancy < self.max_redundancy):  # prevent to grow redundancy
                 self.redundancy += 1
             self.redundancy_behavior += 1
+
         elif(average_additional_redundancy < 0):
             self.redundancy -= 1
             self.redundancy_behavior -= 1
+
         else:  # when everything is OK, increase the window for exploration
             self.generation_window_size += 1
 
@@ -240,6 +243,8 @@ class Encoder:
         elif(self.redundancy_behavior <= -2):
             self.generation_window_size += 1
             self.redundancy_behavior = 0
+
+        return average_additional_redundancy
 
         # print('new redundancy:', self.redundancy, 'average_additional_redundancy:',
         #       average_additional_redundancy, 'res window size:', number_of_responses_in_current_window)
