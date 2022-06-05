@@ -94,6 +94,13 @@ class Encoder:
     def get_generation_count(self, packets: list[Packet]) -> int:
         return int(np.ceil(len(packets)/self.generation_size))
 
+    def get_systematic_data(self):
+        result = []
+        for index, generation in enumerate(self.generation_buffer.buffer):
+            for j, packet in enumerate(generation.packets):
+                result.append(packet.data)
+        return self.GF(result)
+
     def get_packets_by_generation_id(self, packets: list[Packet], generation_id: int) -> list[Packet]:
         result: list[Packet] = []
         for packet in packets:

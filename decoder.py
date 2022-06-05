@@ -125,3 +125,11 @@ class Decoder:
             response_packet.add_feedback(
                 generation_id, generation_size-generation.number_of_received_packets)
         return response_packet
+
+    def get_decoded_data(self):
+        result = []
+        for i, generation in enumerate(self.generation_buffer.buffer):
+            generation_decoded_data = generation.decoded_data
+            for j, decoded_data in enumerate(generation_decoded_data):
+                result.append(decoded_data)
+        return self.GF(result)

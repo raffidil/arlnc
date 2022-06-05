@@ -11,6 +11,16 @@ from cable import Cable
 from response_packet import ResponsePacket
 
 
+def areSame(A, B):
+    rows = len(A)
+    cols = len(A[0])
+    for i in range(rows):
+        for j in range(cols):
+            if (A[i][j] != B[i][j]):
+                return False
+    return True
+
+
 class BlockBasedRLNC:
     def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384, initial_window_size=4, initial_redundancy=4):
         self.field_order = field_order
@@ -104,7 +114,8 @@ class BlockBasedRLNC:
                 if(feedback.generation_id > encoder.last_received_feedback_gen_id):
                     encoder.update_last_received_feedback_gen_id(
                         feedback.generation_id)
-        print('\n No packets to send, all packets are delivered successfully')
+
+        print('\nNo packets to send, all packets are delivered successfully\n')
 
     def receiver(self, env, cable, decoder: Decoder, analytics: Analytics):
         while True:
@@ -149,4 +160,15 @@ class BlockBasedRLNC:
         env.run()
 
         analytics_data = analytics.get_analytics()
+
+        systematic_data = encoder.get_systematic_data()
+        decoded_data = decoder.get_decoded_data()
+        same = areSame(systematic_data, decoded_data)
+
+        if same:
+            print('Sent and received packets are identical')
+        else:
+
+            print('Sent and received packets are NOT identical')
+
         return analytics_data
