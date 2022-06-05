@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 class Record:
     def __init__(self, time,
                  type=None,
@@ -28,6 +31,24 @@ class Record:
         self.effective_packets = effective_packets
         self.linearly_dependent_packets = linearly_dependent_packets
         self.redundant_packets = redundant_packets
+
+    def to_dict(self):
+        return {
+            'time': self.time,
+            'type': self.type,
+            'redundancy': self.redundancy,
+            'window size': self.window_size,
+            'generation window': self.generation_window,
+            'average needed packets': self.average_needed_packets,
+            'generation size': self.generation_size,
+            'loss rate': self.loss_rate,
+            'new coded packets count': self.new_coded_packets_count,
+            'extra packets count': self.extra_packets_count,
+            'received packets': self.received_packets,
+            'effective packets': self.effective_packets,
+            'linearly dependent packets': self.linearly_dependent_packets,
+            'redundant packets': self.redundant_packets
+        }
 
 
 class Analytics:
@@ -80,10 +101,16 @@ class Analytics:
             return new_record
         return self.data[time]
 
-    def get_analytics(self):
-        res: list[Record] = []
+    def get_data(self):
+        result: list[Record] = []
         for val in self.data:
             if val != None:
-                res.append(val)
+                result.append(val)
 
-        return res
+        return result
+
+    def get_analytics_data_frame(self):
+        data = self.get_data()
+        df = pd.DataFrame.from_records(
+            [record.to_dict() for record in data])
+        return df

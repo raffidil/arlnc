@@ -87,7 +87,6 @@ class BlockBasedRLNC:
                 average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response(
                     response.feedback_list)
                 analytics.track(time=env.now,
-                                redundancy=encoder.redundancy,
                                 average_needed_packets=average_additional_redundancy,
                                 type="feedback")
 
@@ -141,7 +140,7 @@ class BlockBasedRLNC:
             force_to_recreate=True)
         return encode_gen_buff
 
-    def run_simulation(self):
+    def run_simulation(self) -> Analytics:
         encoder = self.get_encoder()
         decoder = self.get_decoder()
 
@@ -159,8 +158,6 @@ class BlockBasedRLNC:
 
         env.run()
 
-        analytics_data = analytics.get_analytics()
-
         systematic_data = encoder.get_systematic_data()
         decoded_data = decoder.get_decoded_data()
         same = areSame(systematic_data, decoded_data)
@@ -171,4 +168,4 @@ class BlockBasedRLNC:
 
             print('Sent and received packets are NOT identical')
 
-        return analytics_data
+        return analytics
