@@ -5,9 +5,9 @@ import galois
 from block_based_rlnc import BlockBasedRLNC
 
 
-rlnc = BlockBasedRLNC(field_order=2**8, generation_size=8,
-                      packet_size=16, total_size=1024*8,
-                      initial_redundancy=10, initial_window_size=4)
+rlnc = BlockBasedRLNC(field_order=2**8, generation_size=16,
+                      packet_size=16, total_size=1024*32,
+                      initial_redundancy=10, initial_window_size=4, exponential_loss_param=0.05)
 
 data = rlnc.run_simulation()
 

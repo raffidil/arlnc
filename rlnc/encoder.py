@@ -209,8 +209,7 @@ class Encoder:
         # update the encoding redundancy according to the feedback response
         # if the average of received response feedbacks (needed) of current generation
         # is positive: increase one, if it's negative: decrease one
-        redundancy_behavior_threshold = int(
-            np.floor(self.generation_size*0.25))
+
         needed_sum = 0
         number_of_responses_in_current_window = 0
         average_additional_redundancy = 0
@@ -229,29 +228,92 @@ class Encoder:
 
         print('&&& avg redundancy:', average_additional_redundancy)
 
-        if(average_additional_redundancy > 0):
-            if(self.redundancy < self.max_redundancy):  # prevent to grow redundancy
+        thresh1 = int(
+            np.floor(self.generation_size*0.25))
+        thresh2 = int(
+            np.floor(self.generation_size*0.5))
+        thresh3 = int(
+            np.floor(self.generation_size*0.75))
+
+        if(average_additional_redundancy >= thresh3):
+            self.generation_window_size = 1
+            self.redundancy = 1
+        elif(average_additional_redundancy >= thresh1 and average_additional_redundancy < thresh3):
+            self.generation_window_size = int(
+                np.ceil(self.generation_window_size)/2)
+            self.redundancy = int(np.ceil(self.redundancy)/2)
+        elif(average_additional_redundancy > 0 and average_additional_redundancy < thresh1):
+            if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
             self.redundancy_behavior += 1
+            if(self.redundancy_behavior >= thresh1):
+                self.generation_window_size -= 1
+                self.redundancy_behavior = 0
 
-        elif(average_additional_redundancy < 0):
-            self.redundancy -= 1
-            self.redundancy_behavior -= 1
-
-        else:  # when everything is OK, increase the window for exploration
+        if(average_additional_redundancy == 0):
             self.generation_window_size += 1
 
-        if(self.redundancy == self.max_redundancy):
-            self.generation_window_size -= 1
-
-        if(self.redundancy_behavior >= redundancy_behavior_threshold):
-            self.generation_window_size -= 1
+        elif(average_additional_redundancy < 0 and average_additional_redundancy > -thresh2):
             if(self.redundancy > 1):
-                self.redundancy -= 1
-            self.redundancy_behavior = 0
-        elif(self.redundancy_behavior <= -redundancy_behavior_threshold):
-            self.generation_window_size += 1
-            self.redundancy_behavior = 0
+                self.redundancy -= 1  # min redundancy is 1
+            self.redundancy_behavior -= 1
+            if(self.redundancy_behavior <= -thresh1):
+                self.generation_window_size += 1
+                self.redundancy_behavior = 0
+        elif(average_additional_redundancy <= -thresh2):
+            self.generation_window_size *= 2
+            self.redundancy = int(np.ceil(self.redundancy)/2)
+
+        # average_additional_redundancy_threshold = int(
+        #     np.floor(self.generation_size*0.25))
+        # redundancy_behavior_threshold = int(
+        #     np.floor(self.generation_size*0.25))
+        # # ____ second ____
+        # if(average_additional_redundancy > 0):
+        #     if(self.redundancy < self.max_redundancy):  # prevent to grow redundancy
+        #         self.redundancy += 1
+        #     if(average_additional_redundancy >= average_additional_redundancy_threshold):
+        #         self.generation_window_size = int(
+        #             np.ceil(self.generation_window_size/2))
+        #         self.redundancy = int(np.ceil(self.redundancy/2))
+        #     else:
+        #         self.redundancy_behavior += 1
+        # elif(average_additional_redundancy < 0):
+        #     if(average_additional_redundancy <= -average_additional_redundancy_threshold):
+        #         self.generation_window_size += 1
+        #         self.redundancy = int(np.ceil(self.redundancy/2))
+        #     else:
+        #         self.redundancy -= 1
+        #         self.redundancy_behavior -= 1
+        # else:  # when everything is OK, increase the window for exploration
+        #     self.generation_window_size += 1
+        # # ____ second.end ____
+
+        # # ____ first ____
+        # # if(average_additional_redundancy > 0):
+        # #     if(self.redundancy < self.max_redundancy):  # prevent to grow redundancy
+        # #         self.redundancy += 1
+        # #     self.redundancy_behavior += 1
+
+        # # elif(average_additional_redundancy < 0):
+        # #     self.redundancy -= 1
+        # #     self.redundancy_behavior -= 1
+
+        # # else:  # when everything is OK, increase the window for exploration
+        # #     self.generation_window_size += 1
+        # # ____first.end____
+
+        # if(self.redundancy == self.max_redundancy):
+        #     self.generation_window_size -= 1
+
+        # if(self.redundancy_behavior >= redundancy_behavior_threshold):
+        #     self.generation_window_size -= 1
+        #     if(self.redundancy > 1):
+        #         self.redundancy -= 1
+        #     self.redundancy_behavior = 0
+        # elif(self.redundancy_behavior <= -redundancy_behavior_threshold):
+        #     self.generation_window_size += 1
+        #     self.redundancy_behavior = 0
 
         return average_additional_redundancy
 

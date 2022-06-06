@@ -22,11 +22,18 @@ def areSame(A, B):
 
 
 class BlockBasedRLNC:
-    def __init__(self, field_order=2**8, generation_size=16, packet_size=1024, total_size=16384, initial_window_size=4, initial_redundancy=4):
+    def __init__(self, field_order=2**8,
+                 generation_size=16,
+                 packet_size=1024,
+                 total_size=16384,
+                 initial_window_size=4,
+                 initial_redundancy=4,
+                 exponential_loss_param=0.05):
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
+        self.exponential_loss_param = exponential_loss_param
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
@@ -91,8 +98,8 @@ class BlockBasedRLNC:
                                 type="feedback")
 
             for feedback in response.feedback_list:
-                print('gen id:', feedback.generation_id,
-                      'needs', feedback.needed, "packet")
+                # print('gen id:', feedback.generation_id,
+                #       'needs', feedback.needed, "packet")
                 generation_id = feedback.generation_id
                 needed = feedback.needed
                 if(needed <= 0):  # the generation has been decoded successfully
@@ -152,7 +159,7 @@ class BlockBasedRLNC:
         analytics = Analytics()
 
         cable = Cable(env, 1, loss_mode="exponential",
-                      exponential_loss_param=0.05)
+                      exponential_loss_param=self.exponential_loss_param)
         env.process(self.sender(env, cable, encoder, analytics))
         env.process(self.receiver(env, cable, decoder, analytics))
 
@@ -163,7 +170,7 @@ class BlockBasedRLNC:
         same = areSame(systematic_data, decoded_data)
 
         if same:
-            print('Sent and received packets are identical')
+            print('Sent and received packets are identical!')
         else:
 
             print('Sent and received packets are NOT identical')
