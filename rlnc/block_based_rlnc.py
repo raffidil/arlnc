@@ -28,12 +28,16 @@ class BlockBasedRLNC:
                  total_size=16384,
                  initial_window_size=4,
                  initial_redundancy=4,
-                 exponential_loss_param=0.05):
+                 exponential_loss_param=0.05,
+                 loss_rate=0,
+                 loss_mode="exponential",):
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
         self.exponential_loss_param = exponential_loss_param
+        self.loss_rate = loss_rate
+        self.loss_mode = loss_mode
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
@@ -158,7 +162,7 @@ class BlockBasedRLNC:
         env = simpy.Environment()
         analytics = Analytics()
 
-        cable = Cable(env, 1, loss_mode="exponential",
+        cable = Cable(env, 1, loss_mode=self.loss_mode, loss_rate=self.loss_rate,
                       exponential_loss_param=self.exponential_loss_param)
         env.process(self.sender(env, cable, encoder, analytics))
         env.process(self.receiver(env, cable, decoder, analytics))

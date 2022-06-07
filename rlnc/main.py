@@ -5,11 +5,16 @@ import galois
 from block_based_rlnc import BlockBasedRLNC
 
 
-rlnc = BlockBasedRLNC(field_order=2**8, generation_size=16,
-                      packet_size=16, total_size=1024*32,
-                      initial_redundancy=10, initial_window_size=4, exponential_loss_param=0.05)
+# rlnc = BlockBasedRLNC(field_order=2**8, generation_size=16,
+#                       packet_size=16, total_size=1024*32,
+#                       initial_redundancy=10, initial_window_size=4, exponential_loss_param=0.05)
+# data = rlnc.run_simulation()
 
-data = rlnc.run_simulation()
+rlnc_constant_loss = BlockBasedRLNC(field_order=2**8, generation_size=16,
+                                    packet_size=16, total_size=1024*32,
+                                    initial_redundancy=0, initial_window_size=1, loss_rate=0.2, loss_mode="constant")
+
+data = rlnc_constant_loss.run_simulation()
 
 
 # for index, record in enumerate(data):
@@ -26,8 +31,5 @@ data = rlnc.run_simulation()
 
 
 # to do
-# - change redundancy and window dynamic
-#   - calculate the next window size from current response
-#     (number of extra packets that corresponds the network loss rate)
 # - prepare the whole generation if the needed is higher than generation_loss_threshold for next transmission (test with loss=0.95 and R=1)
-# - dynamic adaptive loss (optional)
+# - add gilbert-elliot loss model as option

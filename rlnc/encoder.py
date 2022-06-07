@@ -238,7 +238,7 @@ class Encoder:
         if(average_additional_redundancy >= thresh3):
             self.generation_window_size = 1
             self.redundancy = 1
-        elif(average_additional_redundancy >= thresh1 and average_additional_redundancy < thresh3):
+        elif(average_additional_redundancy >= thresh1 and average_additional_redundancy < thresh3 and self.generation_window_size != 1):
             self.generation_window_size = int(
                 np.ceil(self.generation_window_size)/2)
             self.redundancy = int(np.ceil(self.redundancy)/2)
@@ -246,7 +246,7 @@ class Encoder:
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
             self.redundancy_behavior += 1
-            if(self.redundancy_behavior >= thresh1):
+            if(self.redundancy_behavior >= thresh1 and self.generation_window_size != 1):
                 self.generation_window_size -= 1
                 self.redundancy_behavior = 0
 
