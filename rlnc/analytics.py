@@ -10,8 +10,9 @@ class Record:
                  average_needed_packets=None,  # average_redundancy
                  generation_size=None,
                  loss_rate=None,
-                 new_coded_packets_count=None,
-                 extra_packets_count=None,
+                 new_coded_packets_count=0,
+                 extra_packets_count=0,
+                 total_sent_packets=0,
                  # decoder
                  received_packets=None,
                  effective_packets=None,
@@ -27,6 +28,7 @@ class Record:
         self.loss_rate = loss_rate
         self.new_coded_packets_count = new_coded_packets_count
         self.extra_packets_count = extra_packets_count
+        self.total_sent_packets = total_sent_packets
         self.received_packets = received_packets
         self.effective_packets = effective_packets
         self.linearly_dependent_packets = linearly_dependent_packets
@@ -44,6 +46,7 @@ class Record:
             'loss rate': self.loss_rate,
             'new coded packets count': self.new_coded_packets_count,
             'extra packets count': self.extra_packets_count,
+            'total sent packets': self.total_sent_packets,
             'received packets': self.received_packets,
             'effective packets': self.effective_packets,
             'linearly dependent packets': self.linearly_dependent_packets,
@@ -71,8 +74,9 @@ class Analytics:
               average_needed_packets=None,  # average_redundancy
               generation_size=None,
               loss_rate=None,
-              new_coded_packets_count=None,
-              extra_packets_count=None,
+              new_coded_packets_count=0,
+              extra_packets_count=0,
+              total_sent_packets=0,
               # decoder
               received_packets=None,
               effective_packets=None,
@@ -88,6 +92,7 @@ class Analytics:
         record.loss_rate = loss_rate
         record.new_coded_packets_count = new_coded_packets_count
         record.extra_packets_count = extra_packets_count
+        record.total_sent_packets = total_sent_packets
         record.received_packets = received_packets
         record.effective_packets = effective_packets
         record.linearly_dependent_packets = linearly_dependent_packets

@@ -1,7 +1,4 @@
-import json
-from numpy.linalg import matrix_rank
-import numpy as np
-import galois
+
 from block_based_rlnc import BlockBasedRLNC
 
 
@@ -12,7 +9,7 @@ from block_based_rlnc import BlockBasedRLNC
 
 rlnc_constant_loss = BlockBasedRLNC(field_order=2**8, generation_size=16,
                                     packet_size=16, total_size=1024*32,
-                                    initial_redundancy=0, initial_window_size=1, loss_rate=0.2, loss_mode="constant")
+                                    initial_redundancy=0, initial_window_size=1, loss_rate=0.2, loss_mode="ge")
 
 data = rlnc_constant_loss.run_simulation()
 

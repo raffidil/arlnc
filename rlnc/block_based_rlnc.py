@@ -30,7 +30,8 @@ class BlockBasedRLNC:
                  initial_redundancy=4,
                  exponential_loss_param=0.05,
                  loss_rate=0,
-                 loss_mode="exponential",):
+                 loss_mode="exponential",
+                 adjust_algorithm="alpha"):
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
@@ -38,6 +39,7 @@ class BlockBasedRLNC:
         self.exponential_loss_param = exponential_loss_param
         self.loss_rate = loss_rate
         self.loss_mode = loss_mode
+        self.adjust_algorithm = adjust_algorithm
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
@@ -88,6 +90,7 @@ class BlockBasedRLNC:
                             loss_rate=loss_rate,
                             extra_packets_count=extra_count,
                             new_coded_packets_count=new_count,
+                            total_sent_packets=total_count,
                             type="send")
 
             response: ResponsePacket = yield cable.get()
@@ -95,8 +98,12 @@ class BlockBasedRLNC:
             if(len(response.feedback_list) > 0 if response.feedback_list else False):
                 extra_packets_to_send: list[Packet] = []
                 print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
-                average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response(
-                    response.feedback_list)
+                if(self.adjust_algorithm == 'alpha'):
+                    average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
+                        response.feedback_list)
+                if(self.adjust_algorithm == 'beta'):
+                    average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_beta(
+                        response.feedback_list)
                 analytics.track(time=env.now,
                                 average_needed_packets=average_additional_redundancy,
                                 type="feedback")
