@@ -10,6 +10,7 @@ class Cable(object):
                  exponential_loss_param=0.05,
                  ge_loss_good_to_bad=0.027,
                  ge_loss_bad_to_good=0.25,
+                 ee_loss_error=0.25,
                  transmission_delay_mode="static"):
         self.env = env
         self.delay = delay
@@ -19,8 +20,9 @@ class Cable(object):
         self.exponential_loss_param = exponential_loss_param
         self.ge_loss_good_to_bad = ge_loss_good_to_bad
         self.ge_loss_bad_to_good = ge_loss_bad_to_good
+        self.ee_loss_error = ee_loss_error
         self.transmission_delay_mode = transmission_delay_mode
-        self.gilbert_elliot_state = 'good'  # 'good' or 'bad'
+        self.gilbert_elliot_state = 'good'  # 'good' or 'bad' or 'error'
 
     def latency(self, value, delay):
         yield self.env.timeout(delay)
@@ -56,13 +58,49 @@ class Cable(object):
         elif(self.loss_mode == "ge"):
             probability = np.random.uniform(0, 1)
             if(self.gilbert_elliot_state == 'good'):
-                applied_loss_rate = 0
                 if(probability <= self.ge_loss_good_to_bad):
                     self.gilbert_elliot_state = 'bad'
+                    applied_loss_rate = 1
+                else:
+                    applied_loss_rate = 0
             elif(self.gilbert_elliot_state == 'bad'):
-                applied_loss_rate = 1
                 if(probability <= self.ge_loss_bad_to_good):
                     self.gilbert_elliot_state = 'good'
+                    applied_loss_rate = 0
+                else:
+                    applied_loss_rate = 1
+        elif(self.loss_mode == "ee"):
+            probability = np.random.uniform(0, 1)
+            if(self.gilbert_elliot_state == 'good'):
+                if(probability <= self.ge_loss_good_to_bad):
+                    self.gilbert_elliot_state = 'bad'
+                    applied_loss_rate = 1
+                elif(probability > self.ge_loss_good_to_bad and
+                     probability <= self.ge_loss_good_to_bad + self.ee_loss_error):
+                    self.gilbert_elliot_state = 'error'
+                    applied_loss_rate = loss_rate
+                else:
+                    applied_loss_rate = 0
+            elif(self.gilbert_elliot_state == 'bad'):
+                if(probability <= self.ge_loss_bad_to_good):
+                    self.gilbert_elliot_state = 'good'
+                    applied_loss_rate = 0
+                elif(probability > self.ge_loss_bad_to_good and
+                     probability <= self.ge_loss_bad_to_good + self.ee_loss_error):
+                    self.gilbert_elliot_state = 'error'
+                    applied_loss_rate = loss_rate
+                else:
+                    applied_loss_rate = 1
+            elif(self.gilbert_elliot_state == 'error'):
+                if(probability <= self.ge_loss_bad_to_good):
+                    self.gilbert_elliot_state = 'good'
+                    applied_loss_rate = 0
+                elif(probability > self.ge_loss_bad_to_good and
+                     probability <= self.ge_loss_bad_to_good + self.ge_loss_good_to_bad):
+                    self.gilbert_elliot_state = 'bad'
+                    applied_loss_rate = 1
+                else:
+                    applied_loss_rate = loss_rate
 
         if(applied_loss_rate > 1):
             applied_loss_rate = 1
