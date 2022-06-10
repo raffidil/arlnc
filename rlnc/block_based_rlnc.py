@@ -29,6 +29,8 @@ class BlockBasedRLNC:
                  initial_window_size=4,
                  initial_redundancy=4,
                  exponential_loss_param=0.05,
+                 ge_loss_good_to_bad=0.027,
+                 ge_loss_bad_to_good=0.25,
                  loss_rate=0,
                  loss_mode="constant",
                  transmission_delay_mode="static",
@@ -38,6 +40,8 @@ class BlockBasedRLNC:
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
         self.exponential_loss_param = exponential_loss_param
+        self.ge_loss_good_to_bad = ge_loss_good_to_bad
+        self.ge_loss_bad_to_good = ge_loss_bad_to_good
         self.loss_rate = loss_rate
         self.loss_mode = loss_mode
         self.transmission_delay_mode = transmission_delay_mode
@@ -173,6 +177,8 @@ class BlockBasedRLNC:
 
         cable = Cable(env, 1, loss_mode=self.loss_mode, loss_rate=self.loss_rate,
                       exponential_loss_param=self.exponential_loss_param,
+                      ge_loss_bad_to_good=self.ge_loss_bad_to_good,
+                      ge_loss_good_to_bad=self.ge_loss_good_to_bad,
                       transmission_delay_mode=self.transmission_delay_mode)
         env.process(self.sender(env, cable, encoder, analytics))
         env.process(self.receiver(env, cable, decoder, analytics))
