@@ -9,7 +9,9 @@ from block_based_rlnc import BlockBasedRLNC
 
 rlnc_constant_loss = BlockBasedRLNC(field_order=2**8, generation_size=16,
                                     packet_size=16, total_size=1024*32,
-                                    initial_redundancy=0, initial_window_size=1, loss_rate=0.2, loss_mode="ge")
+                                    initial_redundancy=0, initial_window_size=1,
+                                    loss_mode="exponential", exponential_loss_param=0.045,
+                                    transmission_delay_mode='dynamic')
 
 data = rlnc_constant_loss.run_simulation()
 

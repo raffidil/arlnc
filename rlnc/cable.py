@@ -42,16 +42,19 @@ def apply_loss_to_packets(packets: list, loss_rate=0, loss_mode="constant", expo
 
 
 class Cable(object):
-    def __init__(self, env, delay, loss_rate=0, loss_mode="constant", exponential_loss_param=0.05):
+    def __init__(self, env, delay, loss_rate=0, loss_mode="constant",
+                 exponential_loss_param=0.05,
+                 transmission_delay_mode="static"):
         self.env = env
         self.delay = delay
         self.loss_rate = loss_rate
         self.store = simpy.Store(env)
         self.loss_mode = loss_mode  # constant or exponential
         self.exponential_loss_param = exponential_loss_param
+        self.transmission_delay_mode = transmission_delay_mode
 
-    def latency(self, value):
-        yield self.env.timeout(self.delay)
+    def latency(self, value, delay):
+        yield self.env.timeout(delay)
         self.store.put(value)
 
     def put(self, value, loss_rate=None):
@@ -60,12 +63,17 @@ class Cable(object):
             loss_mode=self.loss_mode,
             exponential_loss_param=self.exponential_loss_param)
         print('@@@ cable loss rate:', applied_loss_rate, ', time:', self.env.now)
-        self.env.process(self.latency(loss_applied_packets))
+        delay = 1
+        if(self.transmission_delay_mode == 'static'):
+            delay = self.delay
+        elif(self.transmission_delay_mode == 'dynamic'):
+            delay = len(value)
+        self.env.process(self.latency(loss_applied_packets, delay=delay))
         return applied_loss_rate
 
     # TEMPORARY: separate from put to insure reliable delivery (no loss)
     def put_response(self, value):
-        self.env.process(self.latency(value))
+        self.env.process(self.latency(value, delay=1))
 
     def get(self):
         return self.store.get()
