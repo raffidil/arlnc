@@ -35,7 +35,7 @@ class BlockBasedRLNC:
                  loss_rate=0,
                  loss_mode="constant",
                  transmission_delay_mode="static",
-                 adjust_algorithm="alpha"):
+                 adjust_algorithm="alpha"):  # alpha, beta, none
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
@@ -109,12 +109,19 @@ class BlockBasedRLNC:
                 if(self.adjust_algorithm == 'alpha'):
                     average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
                         response.feedback_list)
+                    analytics.track(time=env.now,
+                                    average_needed_packets=average_additional_redundancy,
+                                    type="feedback")
                 if(self.adjust_algorithm == 'beta'):
                     average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_beta(
                         response.feedback_list)
-                analytics.track(time=env.now,
-                                average_needed_packets=average_additional_redundancy,
-                                type="feedback")
+                    analytics.track(time=env.now,
+                                    average_needed_packets=average_additional_redundancy,
+                                    type="feedback")
+                if(self.adjust_algorithm == 'none'):
+                    analytics.track(time=env.now,
+                                    average_needed_packets='none',
+                                    type="feedback")
 
             for feedback in response.feedback_list:
                 # print('gen id:', feedback.generation_id,
