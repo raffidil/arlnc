@@ -130,13 +130,14 @@ class Encoder:
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 
-    def create_coded_packet(self, systematic_packets: list[Packet], generation_id: int) -> Packet:
+    def create_coded_packet(self, generation_id: int) -> Packet:
+        systematic_packets = self.get_generation_by_id(
+            generation_id).packets
         packet_set_generation_size = systematic_packets[0].generation_size
-        number_of_packets_to_code = len(systematic_packets)
         random_coefficient_vector = self.create_random_coefficient_vector(
-            number_of_packets_to_code)
+            packet_set_generation_size)
         random_coefficient_1D_matrix = random_coefficient_vector.reshape(
-            (-1, number_of_packets_to_code))
+            (-1, packet_set_generation_size))
 
         packet_data_matrix = []
         for packet in systematic_packets:
@@ -151,11 +152,11 @@ class Encoder:
             data=coded_packet_data, coefficient_vector=random_coefficient_vector, generation_id=generation_id, generation_size=packet_set_generation_size)
         return coded_packet
 
-    def create_coded_packet_vector(self, systematic_packets: list[Packet], generation_id: int, count=1) -> list[Packet]:
+    def create_coded_packet_vector(self, generation_id: int, count=1) -> list[Packet]:
         coded_packets_list = []
         for i in range(count):
             coded_packet = self.create_coded_packet(
-                systematic_packets, generation_id)
+                generation_id)
             coded_packets_list = coded_packets_list + [coded_packet]
         return coded_packets_list
 

@@ -76,7 +76,6 @@ class BlockBasedRLNC:
                     generation_systematic_packets = encoder.get_generation_by_id(
                         generation_id).packets
                     generation_coded_packets = encoder.create_coded_packet_vector(
-                        systematic_packets=generation_systematic_packets,
                         generation_id=generation_id, count=encoder.redundancy)
                     packets_to_send = packets_to_send + \
                         generation_systematic_packets + generation_coded_packets
@@ -133,10 +132,7 @@ class BlockBasedRLNC:
                         encoder.update_last_received_feedback_gen_id(
                             feedback.generation_id)
                     continue
-                generation_systematic_packets = encoder.get_generation_by_id(
-                    generation_id).packets
                 generation_coded_packets = encoder.create_coded_packet_vector(
-                    systematic_packets=generation_systematic_packets,
                     generation_id=generation_id, count=needed)
                 extra_packets_to_send = extra_packets_to_send + generation_coded_packets
 
