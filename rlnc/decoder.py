@@ -8,10 +8,8 @@ from response_packet import ResponsePacket
 
 
 class Decoder:
-    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384):
+    def __init__(self, GF, generation_size=16):
         self.generation_size = generation_size  # number of packets in a gen
-        self.packet_size = packet_size  # bytes
-        self.total_size = total_size
         self.GF = GF
         self.generation_buffer = GenerationBuffer(GF)
 

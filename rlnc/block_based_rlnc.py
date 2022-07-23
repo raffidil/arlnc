@@ -53,8 +53,7 @@ class BlockBasedRLNC:
                                packet_size=packet_size, total_size=total_size,
                                initial_window_size=initial_window_size,
                                initial_redundancy=initial_redundancy)
-        self.decoder = Decoder(GF=self.GF, generation_size=generation_size,
-                               packet_size=packet_size, total_size=total_size)
+        self.decoder = Decoder(GF=self.GF, generation_size=generation_size)
 
     def get_encoder(self):
         return self.encoder
