@@ -29,7 +29,7 @@ class Encoder:
         self.redundancy = initial_redundancy
         self.last_received_feedback_gen_id = -1
         self.max_redundancy = generation_size
-        self.redundancy_behavior = 0
+        self.gws_flag = 0
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -246,10 +246,10 @@ class Encoder:
         elif(average_additional_redundancy > 0 and average_additional_redundancy < thresh1):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
-            self.redundancy_behavior += 1
-            if(self.redundancy_behavior >= thresh1 and self.generation_window_size != 1):
+            self.gws_flag += 1
+            if(self.gws_flag >= thresh1 and self.generation_window_size != 1):
                 self.generation_window_size -= 1
-                self.redundancy_behavior = 0
+                self.gws_flag = 0
 
         if(average_additional_redundancy == 0):
             self.generation_window_size += 1
@@ -257,10 +257,10 @@ class Encoder:
         elif(average_additional_redundancy < 0 and average_additional_redundancy > -thresh2):
             if(self.redundancy > 1):
                 self.redundancy -= 1  # min redundancy is 1
-            self.redundancy_behavior -= 1
-            if(self.redundancy_behavior <= -thresh1):
+            self.gws_flag -= 1
+            if(self.gws_flag <= -thresh1):
                 self.generation_window_size += 1
-                self.redundancy_behavior = 0
+                self.gws_flag = 0
         elif(average_additional_redundancy <= -thresh2):
             self.generation_window_size *= 2
             self.redundancy = int(np.ceil(self.redundancy)/2)
@@ -307,10 +307,10 @@ class Encoder:
         elif(average_additional_redundancy > 0 and average_additional_redundancy < thresh2):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
-            self.redundancy_behavior += 1
-            if(self.redundancy_behavior >= thresh1 and self.generation_window_size != 1):
+            self.gws_flag += 1
+            if(self.gws_flag >= thresh1 and self.generation_window_size != 1):
                 self.generation_window_size -= 1
-                self.redundancy_behavior = 0
+                self.gws_flag = 0
 
         if(average_additional_redundancy == 0):
             self.generation_window_size += 1
@@ -318,10 +318,10 @@ class Encoder:
         elif(average_additional_redundancy < 0 and average_additional_redundancy > -thresh2):
             if(self.redundancy > 1):
                 self.redundancy -= 1  # min redundancy is 1
-            self.redundancy_behavior -= 1
-            if(self.redundancy_behavior <= -thresh1):
+            self.gws_flag -= 1
+            if(self.gws_flag <= -thresh1):
                 self.generation_window_size += 1
-                self.redundancy_behavior = 0
+                self.gws_flag = 0
         elif(average_additional_redundancy <= -thresh2):
             self.generation_window_size *= 2
             self.redundancy = int(np.ceil(self.redundancy)/2)
