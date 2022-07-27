@@ -34,7 +34,6 @@ class BlockBasedRLNC:
                  ee_loss_error=0.25,
                  loss_rate=0,
                  loss_mode="constant",
-                 transmission_delay_mode="static",
                  adjust_algorithm="alpha"):  # alpha, beta, none
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
@@ -46,7 +45,6 @@ class BlockBasedRLNC:
         self.ee_loss_error = ee_loss_error
         self.loss_rate = loss_rate
         self.loss_mode = loss_mode
-        self.transmission_delay_mode = transmission_delay_mode
         self.adjust_algorithm = adjust_algorithm
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
@@ -183,8 +181,7 @@ class BlockBasedRLNC:
                       exponential_loss_param=self.exponential_loss_param,
                       ge_loss_bad_to_good=self.ge_loss_bad_to_good,
                       ge_loss_good_to_bad=self.ge_loss_good_to_bad,
-                      ee_loss_error=self.ee_loss_error,
-                      transmission_delay_mode=self.transmission_delay_mode)
+                      ee_loss_error=self.ee_loss_error)
         env.process(self.sender(env, cable, encoder, analytics))
         env.process(self.receiver(env, cable, decoder, analytics))
 

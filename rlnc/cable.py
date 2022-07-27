@@ -10,8 +10,7 @@ class Cable(object):
                  exponential_loss_param=0.05,
                  ge_loss_good_to_bad=0.027,
                  ge_loss_bad_to_good=0.25,
-                 ee_loss_error=0.25,
-                 transmission_delay_mode="static"):
+                 ee_loss_error=0.25):
         self.env = env
         self.delay = delay
         self.loss_rate = loss_rate
@@ -21,7 +20,6 @@ class Cable(object):
         self.ge_loss_good_to_bad = ge_loss_good_to_bad
         self.ge_loss_bad_to_good = ge_loss_bad_to_good
         self.ee_loss_error = ee_loss_error
-        self.transmission_delay_mode = transmission_delay_mode
         self.gilbert_elliot_state = 'good'  # 'good' or 'bad' or 'error'
 
     def latency(self, value, delay):
@@ -32,12 +30,8 @@ class Cable(object):
         loss_applied_packets, applied_loss_rate = self.apply_loss_to_packets(
             value, loss_rate=loss_rate or self.loss_rate)
         print('@@@ cable loss rate:', applied_loss_rate, ', time:', self.env.now)
-        delay = 1
-        if(self.transmission_delay_mode == 'static'):
-            delay = self.delay
-        elif(self.transmission_delay_mode == 'dynamic'):
-            delay = len(value)
-        self.env.process(self.latency(loss_applied_packets, delay=delay))
+
+        self.env.process(self.latency(loss_applied_packets, delay=self.delay))
         return applied_loss_rate
 
     # TEMPORARY: separate from put to insure reliable delivery (no loss)
