@@ -105,16 +105,16 @@ class BlockBasedRLNC:
                 extra_packets_to_send: list[Packet] = []
                 print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
                 if(self.adjust_algorithm == 'alpha'):
-                    average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
+                    average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
                         response.feedback_list)
                     analytics.track(time=env.now,
-                                    average_needed_packets=average_additional_redundancy,
+                                    average_needed_packets=average_feedback,
                                     type="feedback")
                 if(self.adjust_algorithm == 'beta'):
-                    average_additional_redundancy = encoder.update_encoding_redundancy_and_window_size_by_response_beta(
+                    average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response_beta(
                         response.feedback_list)
                     analytics.track(time=env.now,
-                                    average_needed_packets=average_additional_redundancy,
+                                    average_needed_packets=average_feedback,
                                     type="feedback")
                 if(self.adjust_algorithm == 'none'):
                     analytics.track(time=env.now,

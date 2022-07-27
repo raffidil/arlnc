@@ -213,7 +213,7 @@ class Encoder:
 
         needed_sum = 0
         number_of_responses_in_current_window = 0
-        average_additional_redundancy = 0
+        average_feedback = 0
         # extracting the needed response belonging to the last generation window
         for index, feedback in enumerate(feedback_list):
             if feedback.generation_id in self.generation_current_window:
@@ -221,13 +221,13 @@ class Encoder:
                 number_of_responses_in_current_window += 1
 
         if(number_of_responses_in_current_window == 0 and len(self.generation_current_window) > 0):
-            average_additional_redundancy = self.generation_size
+            average_feedback = self.generation_size
 
         if(number_of_responses_in_current_window > 0):
-            average_additional_redundancy = int(
+            average_feedback = int(
                 np.ceil(needed_sum/number_of_responses_in_current_window))
 
-        print('&&& avg redundancy:', average_additional_redundancy)
+        print('&&& avg feedback:', average_feedback)
 
         thresh1 = int(
             np.floor(self.generation_size*0.25))
@@ -236,14 +236,14 @@ class Encoder:
         thresh3 = int(
             np.floor(self.generation_size*0.75))
 
-        if(average_additional_redundancy >= thresh3):
+        if(average_feedback >= thresh3):
             self.generation_window_size = 1
             self.redundancy = 1
-        elif(average_additional_redundancy >= thresh1 and average_additional_redundancy < thresh3 and self.generation_window_size != 1):
+        elif(average_feedback >= thresh1 and average_feedback < thresh3 and self.generation_window_size != 1):
             self.generation_window_size = int(
                 np.ceil(self.generation_window_size)/2)
             self.redundancy = int(np.ceil(self.redundancy)/2)
-        elif(average_additional_redundancy > 0 and average_additional_redundancy < thresh1):
+        elif(average_feedback > 0 and average_feedback < thresh1):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
             self.gws_flag += 1
@@ -251,21 +251,21 @@ class Encoder:
                 self.generation_window_size -= 1
                 self.gws_flag = 0
 
-        if(average_additional_redundancy == 0):
+        if(average_feedback == 0):
             self.generation_window_size += 1
 
-        elif(average_additional_redundancy < 0 and average_additional_redundancy > -thresh2):
+        elif(average_feedback < 0 and average_feedback > -thresh2):
             if(self.redundancy > 1):
                 self.redundancy -= 1  # min redundancy is 1
             self.gws_flag -= 1
             if(self.gws_flag <= -thresh1):
                 self.generation_window_size += 1
                 self.gws_flag = 0
-        elif(average_additional_redundancy <= -thresh2):
+        elif(average_feedback <= -thresh2):
             self.generation_window_size *= 2
             self.redundancy = int(np.ceil(self.redundancy)/2)
 
-        return average_additional_redundancy
+        return average_feedback
 
     def update_encoding_redundancy_and_window_size_by_response_beta(self, feedback_list: list[Feedback]):
         # update the encoding redundancy according to the feedback response
@@ -274,7 +274,7 @@ class Encoder:
 
         needed_sum = 0
         number_of_responses_in_current_window = 0
-        average_additional_redundancy = 0
+        average_feedback = 0
         # extracting the needed response belonging to the last generation window
         for index, feedback in enumerate(feedback_list):
             if feedback.generation_id in self.generation_current_window:
@@ -282,13 +282,13 @@ class Encoder:
                 number_of_responses_in_current_window += 1
 
         if(number_of_responses_in_current_window == 0 and len(self.generation_current_window) > 0):
-            average_additional_redundancy = self.generation_size
+            average_feedback = self.generation_size
 
         if(number_of_responses_in_current_window > 0):
-            average_additional_redundancy = int(
+            average_feedback = int(
                 np.ceil(needed_sum/number_of_responses_in_current_window))
 
-        print('&&& avg redundancy:', average_additional_redundancy)
+        print('&&& avg feedback:', average_feedback)
 
         thresh1 = int(
             np.floor(self.generation_size*0.25))
@@ -297,14 +297,14 @@ class Encoder:
         thresh3 = int(
             np.floor(self.generation_size*0.75))
 
-        if(average_additional_redundancy >= thresh3):
+        if(average_feedback >= thresh3):
             self.generation_window_size = 1
             self.redundancy = 1
-        elif(average_additional_redundancy >= thresh2 and average_additional_redundancy < thresh3 and self.generation_window_size != 1):
+        elif(average_feedback >= thresh2 and average_feedback < thresh3 and self.generation_window_size != 1):
             self.generation_window_size = int(
                 np.ceil(self.generation_window_size)/2)
             self.redundancy = int(np.ceil(self.redundancy)/2)
-        elif(average_additional_redundancy > 0 and average_additional_redundancy < thresh2):
+        elif(average_feedback > 0 and average_feedback < thresh2):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
             self.gws_flag += 1
@@ -312,18 +312,18 @@ class Encoder:
                 self.generation_window_size -= 1
                 self.gws_flag = 0
 
-        if(average_additional_redundancy == 0):
+        if(average_feedback == 0):
             self.generation_window_size += 1
 
-        elif(average_additional_redundancy < 0 and average_additional_redundancy > -thresh2):
+        elif(average_feedback < 0 and average_feedback > -thresh2):
             if(self.redundancy > 1):
                 self.redundancy -= 1  # min redundancy is 1
             self.gws_flag -= 1
             if(self.gws_flag <= -thresh1):
                 self.generation_window_size += 1
                 self.gws_flag = 0
-        elif(average_additional_redundancy <= -thresh2):
+        elif(average_feedback <= -thresh2):
             self.generation_window_size *= 2
             self.redundancy = int(np.ceil(self.redundancy)/2)
 
-        return average_additional_redundancy
+        return average_feedback
