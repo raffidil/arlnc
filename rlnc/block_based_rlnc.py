@@ -26,15 +26,15 @@ class BlockBasedRLNC:
                  generation_size=16,
                  packet_size=1024,
                  total_size=16384,
-                 initial_window_size=4,
-                 initial_redundancy=4,
+                 initial_window_size=1,
+                 initial_redundancy=1,
                  exponential_loss_param=0.05,
                  ge_loss_good_to_bad=0.027,
                  ge_loss_bad_to_good=0.25,
                  ee_loss_error=0.25,
                  loss_rate=0,
                  loss_mode="constant",
-                 adjust_algorithm="alpha"):  # alpha, beta, none
+                 adjust_algorithm="primary"):  # primary, beta, none
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
@@ -102,8 +102,8 @@ class BlockBasedRLNC:
             if(len(response.feedback_list) > 0 if response.feedback_list else False):
                 extra_packets_to_send: list[Packet] = []
                 print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
-                if(self.adjust_algorithm == 'alpha'):
-                    average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
+                if(self.adjust_algorithm == 'primary'):
+                    average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response(
                         response.feedback_list)
                     analytics.track(time=env.now,
                                     average_feedback=average_feedback,

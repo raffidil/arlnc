@@ -206,7 +206,7 @@ class Encoder:
     def update_last_received_feedback_gen_id(self, last_received_gen_id: int):
         self.last_received_feedback_gen_id = last_received_gen_id
 
-    def update_encoding_redundancy_and_window_size_by_response_alpha(self, feedback_list: list[Feedback]):
+    def update_encoding_redundancy_and_window_size_by_response(self, feedback_list: list[Feedback]):
         # update the encoding redundancy according to the feedback response
         # if the average of received response feedbacks (needed) of current generation
         # is positive: increase one, if it's negative: decrease one
