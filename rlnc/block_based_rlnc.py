@@ -108,17 +108,17 @@ class BlockBasedRLNC:
                     average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response_alpha(
                         response.feedback_list)
                     analytics.track(time=env.now,
-                                    average_needed_packets=average_feedback,
+                                    average_feedback=average_feedback,
                                     type="feedback")
                 if(self.adjust_algorithm == 'beta'):
                     average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response_beta(
                         response.feedback_list)
                     analytics.track(time=env.now,
-                                    average_needed_packets=average_feedback,
+                                    average_feedback=average_feedback,
                                     type="feedback")
                 if(self.adjust_algorithm == 'none'):
                     analytics.track(time=env.now,
-                                    average_needed_packets='none',
+                                    average_feedback='none',
                                     type="feedback")
 
             for feedback in response.feedback_list:

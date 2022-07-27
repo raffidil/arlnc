@@ -7,7 +7,7 @@ class Record:
                  redundancy=None,
                  window_size=None,
                  generation_window=None,
-                 average_needed_packets=None,  # average_redundancy
+                 average_feedback=None,  # average_redundancy
                  generation_size=None,
                  loss_rate=None,
                  new_coded_packets_count=0,
@@ -23,7 +23,7 @@ class Record:
         self.redundancy = redundancy
         self.window_size = window_size
         self.generation_window = generation_window
-        self.average_needed_packets = average_needed_packets
+        self.average_feedback = average_feedback
         self.generation_size = generation_size
         self.loss_rate = loss_rate
         self.new_coded_packets_count = new_coded_packets_count
@@ -41,7 +41,7 @@ class Record:
             'redundancy': self.redundancy,
             'window size': self.window_size,
             'generation window': self.generation_window,
-            'average needed packets': self.average_needed_packets,
+            'average needed packets': self.average_feedback,
             'generation size': self.generation_size,
             'loss rate': self.loss_rate,
             'new coded packets count': self.new_coded_packets_count,
@@ -71,7 +71,7 @@ class Analytics:
               redundancy=None,
               window_size=None,
               generation_window=None,
-              average_needed_packets=None,  # average_redundancy
+              average_feedback=None,  # average_redundancy
               generation_size=None,
               loss_rate=None,
               new_coded_packets_count=0,
@@ -87,7 +87,7 @@ class Analytics:
         record.redundancy = redundancy
         record.window_size = window_size
         record.generation_window = generation_window
-        record.average_needed_packets = average_needed_packets
+        record.average_feedback = average_feedback
         record.generation_size = generation_size
         record.loss_rate = loss_rate
         record.new_coded_packets_count = new_coded_packets_count
