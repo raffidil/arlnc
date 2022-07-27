@@ -11,7 +11,7 @@ from cable import Cable
 from response_packet import ResponsePacket
 
 
-def areSame(A, B):
+def are_same(A, B):
     rows = len(A)
     cols = len(A[0])
     for i in range(rows):
@@ -192,7 +192,7 @@ class BlockBasedRLNC:
 
         systematic_data = encoder.get_systematic_data()
         decoded_data = decoder.get_decoded_data()
-        same = areSame(systematic_data, decoded_data)
+        same = are_same(systematic_data, decoded_data)
 
         if same:
             print('Sent and received packets are identical!')
