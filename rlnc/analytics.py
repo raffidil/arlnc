@@ -7,7 +7,7 @@ class Record:
                  redundancy=None,
                  window_size=None,
                  generation_window=None,
-                 average_feedback=None,  # average_redundancy
+                 average_feedback=None,
                  generation_size=None,
                  loss_rate=None,
                  new_coded_packets_count=0,
@@ -41,7 +41,7 @@ class Record:
             'redundancy': self.redundancy,
             'window size': self.window_size,
             'generation window': self.generation_window,
-            'average needed packets': self.average_feedback,
+            'average feedback': self.average_feedback,
             'generation size': self.generation_size,
             'loss rate': self.loss_rate,
             'new coded packets count': self.new_coded_packets_count,
