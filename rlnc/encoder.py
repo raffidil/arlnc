@@ -1,4 +1,3 @@
-import random
 import re
 import numpy as np
 import galois
@@ -39,7 +38,7 @@ class Encoder:
             self.packet_size - (self.total_size % self.packet_size)) % self.packet_size
 
         for i in range(self.total_size * self.field_degree):
-            temp = str(random.randint(0, 1))
+            temp = str(np.random.randint(0, 1))
             binary_string += temp
 
         for i in range(required_additional_zeroes * self.field_degree):
@@ -126,7 +125,7 @@ class Encoder:
     def create_random_coefficient_vector(self, size):
         coefficient_vector = []
         for i in range(size):
-            temp = random.randint(0, self.field_order-1)
+            temp = np.random.randint(0, self.field_order-1)
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 

@@ -33,6 +33,8 @@ class BlockBasedRLNC:
                  ge_loss_bad_to_good=0.25,
                  ee_loss_error=0.25,
                  loss_rate=0,
+                 seed=42,
+                 force_to_recreate_new_data=False,
                  loss_mode="constant",
                  adjust_algorithm="primary"):  # primary, beta, none
         self.field_order = field_order
@@ -45,6 +47,7 @@ class BlockBasedRLNC:
         self.ee_loss_error = ee_loss_error
         self.loss_rate = loss_rate
         self.loss_mode = loss_mode
+        self.force_to_recreate_new_data = force_to_recreate_new_data
         self.adjust_algorithm = adjust_algorithm
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
@@ -52,6 +55,8 @@ class BlockBasedRLNC:
                                initial_window_size=initial_window_size,
                                initial_redundancy=initial_redundancy)
         self.decoder = Decoder(GF=self.GF, generation_size=generation_size)
+        self.seed = seed
+        np.random.seed(seed)
 
     def get_encoder(self):
         return self.encoder
@@ -163,7 +168,7 @@ class BlockBasedRLNC:
     def initialize_packets(self):
         print('Initializing packets...')
         encode_gen_buff = self.encoder.create_systematic_packets_generation_buffer(
-            force_to_recreate=True)
+            force_to_recreate=self.force_to_recreate_new_data)
         return encode_gen_buff
 
     def run_simulation(self) -> Analytics:
@@ -181,7 +186,8 @@ class BlockBasedRLNC:
                       exponential_loss_param=self.exponential_loss_param,
                       ge_loss_bad_to_good=self.ge_loss_bad_to_good,
                       ge_loss_good_to_bad=self.ge_loss_good_to_bad,
-                      ee_loss_error=self.ee_loss_error)
+                      ee_loss_error=self.ee_loss_error,
+                      seed=self.seed)
         env.process(self.sender(env, cable, encoder, analytics))
         env.process(self.receiver(env, cable, decoder, analytics))
 

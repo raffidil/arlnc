@@ -1,7 +1,4 @@
 import simpy
-
-
-from numpy.random import default_rng
 import numpy as np
 
 
@@ -10,7 +7,7 @@ class Cable(object):
                  exponential_loss_param=0.05,
                  ge_loss_good_to_bad=0.027,
                  ge_loss_bad_to_good=0.25,
-                 ee_loss_error=0.25):
+                 ee_loss_error=0.25, seed=42):
         self.env = env
         self.delay = delay
         self.loss_rate = loss_rate
@@ -21,6 +18,7 @@ class Cable(object):
         self.ge_loss_bad_to_good = ge_loss_bad_to_good
         self.ee_loss_error = ee_loss_error
         self.gilbert_elliot_state = 'good'  # 'good' or 'bad' or 'error'
+        self.random = np.random.default_rng(seed=seed)
 
     def latency(self, value, delay):
         yield self.env.timeout(delay)
@@ -106,8 +104,8 @@ class Cable(object):
         if(number_of_lost_packets == number_of_packets and applied_loss_rate < 1):
             # in case of one packet
             number_of_lost_packets = number_of_lost_packets - 1
-        rng = default_rng()
-        lost_packets_index = rng.choice(
+
+        lost_packets_index = self.random.choice(
             number_of_packets, size=number_of_lost_packets, replace=False)
         result = []
         for index, packet in enumerate(packets):
