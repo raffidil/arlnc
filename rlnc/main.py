@@ -7,14 +7,19 @@ from block_based_rlnc import BlockBasedRLNC
 #                       initial_redundancy=10, initial_window_size=4, exponential_loss_param=0.05)
 # data = rlnc.run_simulation()
 
-config = dict(field_order=2**8, generation_size=16,
-              packet_size=16, total_size=1024*64,
-              initial_redundancy=1, initial_window_size=1,
-              loss_mode="exponential",  ge_loss_good_to_bad=0.05, ge_loss_bad_to_good=0.2, ee_loss_error=0.25, loss_rate=0.2, exponential_loss_param=0.045,
-              adjust_algorithm="primary", seed=2, force_to_recreate_new_data=False)
+base_config = dict(field_order=2**8, generation_size=16,
+                   packet_size=16, total_size=1024*64,
+                   initial_redundancy=1, initial_window_size=1,
+                   ge_loss_good_to_bad=0.05, ge_loss_bad_to_good=0.2,
+                   exponential_loss_param=0.045,
+                   ee_loss_error=0.25, seed=2,
+                   force_to_recreate_new_data=False)
 
+config = dict(loss_mode="ge", adjust_algorithm="none")
 
-rlnc = BlockBasedRLNC(**config)
+applied_config = base_config | config
+
+rlnc = BlockBasedRLNC(**applied_config)
 
 data = rlnc.run_simulation()
 
