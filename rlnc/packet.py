@@ -4,4 +4,3 @@ class Packet:
         self.coefficient_vector = coefficient_vector
         self.generation_id = generation_id
         self.generation_size = generation_size
-        self.packet_size = len(self.data)  # number of bytes in data
