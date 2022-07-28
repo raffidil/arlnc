@@ -241,8 +241,8 @@ class Encoder:
             self.redundancy = 1
         elif(average_feedback >= thresh1 and average_feedback < thresh3 and self.generation_window_size != 1):
             self.generation_window_size = int(
-                np.ceil(self.generation_window_size)/2)
-            self.redundancy = int(np.ceil(self.redundancy)/2)
+                np.ceil(self.generation_window_size/2))
+            self.redundancy = int(np.ceil(self.redundancy/2))
         elif(average_feedback > 0 and average_feedback < thresh1):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
@@ -263,7 +263,7 @@ class Encoder:
                 self.gws_flag = 0
         elif(average_feedback <= -thresh2):
             self.generation_window_size *= 2
-            self.redundancy = int(np.ceil(self.redundancy)/2)
+            self.redundancy = int(np.ceil(self.redundancy/2))
 
         return average_feedback
 
@@ -302,8 +302,8 @@ class Encoder:
             self.redundancy = 1
         elif(average_feedback >= thresh2 and average_feedback < thresh3 and self.generation_window_size != 1):
             self.generation_window_size = int(
-                np.ceil(self.generation_window_size)/2)
-            self.redundancy = int(np.ceil(self.redundancy)/2)
+                np.ceil(self.generation_window_size/2))
+            self.redundancy = int(np.ceil(self.redundancy/2))
         elif(average_feedback > 0 and average_feedback < thresh2):
             if(self.redundancy < self.max_redundancy):
                 self.redundancy += 1
@@ -324,6 +324,6 @@ class Encoder:
                 self.gws_flag = 0
         elif(average_feedback <= -thresh2):
             self.generation_window_size *= 2
-            self.redundancy = int(np.ceil(self.redundancy)/2)
+            self.redundancy = int(np.ceil(self.redundancy/2))
 
         return average_feedback
