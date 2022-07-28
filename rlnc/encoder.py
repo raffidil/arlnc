@@ -9,7 +9,7 @@ from response_packet import Feedback
 
 
 class Encoder:
-    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384, initial_window_size=4, initial_redundancy=4):
+    def __init__(self, GF, generation_size=16, packet_size=1024, total_size=16384, initial_window_size=4, initial_redundancy=4, seed=42):
         self.field_order = GF.order
         self.field_degree = int(np.log2(self.field_order))
         if not np.log2(self.field_order).is_integer():
@@ -29,6 +29,7 @@ class Encoder:
         self.last_received_feedback_gen_id = -1
         self.max_redundancy = generation_size
         self.gws_flag = 0
+        self.rnd_state = np.random.RandomState(seed)
 
     def create_random_binary_string(self):  # both in bytes
         binary_string = ""
@@ -38,7 +39,7 @@ class Encoder:
             self.packet_size - (self.total_size % self.packet_size)) % self.packet_size
 
         for i in range(self.total_size * self.field_degree):
-            temp = str(np.random.randint(0, 1))
+            temp = str(self.rnd_state.randint(0, 1))
             binary_string += temp
 
         for i in range(required_additional_zeroes * self.field_degree):
@@ -125,7 +126,7 @@ class Encoder:
     def create_random_coefficient_vector(self, size):
         coefficient_vector = []
         for i in range(size):
-            temp = np.random.randint(0, self.field_order-1)
+            temp = self.rnd_state.randint(0, self.field_order-1)
             coefficient_vector += [temp]
         return self.GF(np.array(coefficient_vector))
 

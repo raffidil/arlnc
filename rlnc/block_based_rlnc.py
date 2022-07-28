@@ -53,10 +53,10 @@ class BlockBasedRLNC:
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
                                initial_window_size=initial_window_size,
-                               initial_redundancy=initial_redundancy)
+                               initial_redundancy=initial_redundancy,
+                               seed=seed)
         self.decoder = Decoder(GF=self.GF, generation_size=generation_size)
         self.seed = seed
-        np.random.seed(seed)
 
     def get_encoder(self):
         return self.encoder

@@ -18,7 +18,8 @@ class Cable(object):
         self.ge_loss_bad_to_good = ge_loss_bad_to_good
         self.ee_loss_error = ee_loss_error
         self.gilbert_elliot_state = 'good'  # 'good' or 'bad' or 'error'
-        self.random = np.random.default_rng(seed=seed)
+        self.packets_rnd_state = np.random.default_rng(seed=seed)
+        self.probability_rnd_state = np.random.RandomState(seed)
 
     def latency(self, value, delay):
         yield self.env.timeout(delay)
@@ -48,7 +49,7 @@ class Cable(object):
             applied_loss_rate = np.round((
                 2**(self.exponential_loss_param*number_of_packets)-1)/100, 3)
         elif(self.loss_mode == "ge"):
-            probability = np.random.uniform(0, 1)
+            probability = self.probability_rnd_state.uniform(0, 1)
             if(self.gilbert_elliot_state == 'good'):
                 if(probability <= self.ge_loss_good_to_bad):
                     self.gilbert_elliot_state = 'bad'
@@ -62,7 +63,7 @@ class Cable(object):
                 else:
                     applied_loss_rate = 1
         elif(self.loss_mode == "ee"):
-            probability = np.random.uniform(0, 1)
+            probability = self.probability_rnd_state.uniform(0, 1)
             if(self.gilbert_elliot_state == 'good'):
                 if(probability <= self.ge_loss_good_to_bad):
                     self.gilbert_elliot_state = 'bad'
@@ -105,7 +106,7 @@ class Cable(object):
             # in case of one packet
             number_of_lost_packets = number_of_lost_packets - 1
 
-        lost_packets_index = self.random.choice(
+        lost_packets_index = self.packets_rnd_state.choice(
             number_of_packets, size=number_of_lost_packets, replace=False)
         result = []
         for index, packet in enumerate(packets):
