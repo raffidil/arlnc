@@ -1,5 +1,3 @@
-from http.client import CONTINUE
-from operator import concat
 import numpy as np
 from generation_buffer import GenerationBuffer
 from generation import Generation
