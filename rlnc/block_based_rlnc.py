@@ -115,8 +115,10 @@ class BlockBasedRLNC:
                                     type="feedback")
 
                 if(self.adjust_algorithm == 'static'):
+                    average_feedback = encoder.calculate_average_feedback(
+                        response.feedback_list)
                     analytics.track(time=env.now,
-                                    average_feedback='none',
+                                    average_feedback=average_feedback,
                                     type="feedback")
 
             for feedback in response.feedback_list:
