@@ -112,6 +112,4 @@ class Cable(object):
         for index, packet in enumerate(packets):
             if(index not in lost_packets_index):
                 result = result + [packet]
-        # shuffle the packets to emulate the out-of-order delivery
-        # random.shuffle(result)
         return result, applied_loss_rate
