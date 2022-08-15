@@ -36,7 +36,7 @@ class BlockBasedRLNC:
                  seed=42,
                  force_to_recreate_new_data=False,
                  loss_mode="constant",
-                 adjust_algorithm="dynamic"):  # static, dynamic
+                 approach="arlnc"):  # arlnc, standard
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
@@ -48,7 +48,7 @@ class BlockBasedRLNC:
         self.loss_rate = loss_rate
         self.loss_mode = loss_mode
         self.force_to_recreate_new_data = force_to_recreate_new_data
-        self.adjust_algorithm = adjust_algorithm
+        self.approach = approach
         self.GF = galois.GF(field_order, display="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
@@ -107,14 +107,14 @@ class BlockBasedRLNC:
             if(len(response.feedback_list) > 0 if response.feedback_list else False):
                 extra_packets_to_send: list[Packet] = []
                 print('Sender  :: Feedback received from decoder: time(%d)' % env.now)
-                if(self.adjust_algorithm == 'dynamic'):
+                if(self.approach == 'arlnc'):
                     average_feedback = encoder.update_encoding_redundancy_and_window_size_by_response(
                         response.feedback_list)
                     analytics.track(time=env.now,
                                     average_feedback=average_feedback,
                                     type="feedback")
 
-                if(self.adjust_algorithm == 'static'):
+                if(self.approach == 'standard'):
                     average_feedback = encoder.calculate_average_feedback(
                         response.feedback_list)
                     analytics.track(time=env.now,
