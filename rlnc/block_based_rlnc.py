@@ -92,6 +92,9 @@ class BlockBasedRLNC:
                                                                    extra_count, total_count, env.now))
 
             loss_rate = cable.put(packets_to_send+extra_packets_to_send)
+            coded_packets_count = (
+                len(current_generation_window) * encoder.redundancy) + len(extra_packets_to_send)
+            print("^^^ coded packets count", coded_packets_count)
             analytics.track(time=env.now,
                             redundancy=encoder.redundancy,
                             window_size=encoder.generation_window_size,
@@ -100,6 +103,7 @@ class BlockBasedRLNC:
                             extra_packets_count=extra_count,
                             new_coded_packets_count=new_count,
                             total_sent_packets=total_count,
+                            coded_packets_count=coded_packets_count,
                             type="send")
 
             response: ResponsePacket = yield cable.get()

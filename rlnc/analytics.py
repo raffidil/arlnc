@@ -13,6 +13,7 @@ class Record:
                  new_coded_packets_count=0,
                  extra_packets_count=0,
                  total_sent_packets=0,
+                 coded_packets_count=0,
                  # decoder
                  received_packets=None,
                  effective_packets=None,
@@ -33,6 +34,7 @@ class Record:
         self.effective_packets = effective_packets
         self.linearly_dependent_packets = linearly_dependent_packets
         self.redundant_packets = redundant_packets
+        self.coded_packets_count = coded_packets_count
 
     def to_dict(self):
         return {
@@ -50,7 +52,8 @@ class Record:
             'received packets': self.received_packets,
             'effective packets': self.effective_packets,
             'linearly dependent packets': self.linearly_dependent_packets,
-            'redundant packets': self.redundant_packets
+            'redundant packets': self.redundant_packets,
+            'coded packets count': self.coded_packets_count
         }
 
 
@@ -77,6 +80,7 @@ class Analytics:
               new_coded_packets_count=0,
               extra_packets_count=0,
               total_sent_packets=0,
+              coded_packets_count=0,
               # decoder
               received_packets=None,
               effective_packets=None,
@@ -97,6 +101,7 @@ class Analytics:
         record.effective_packets = effective_packets
         record.linearly_dependent_packets = linearly_dependent_packets
         record.redundant_packets = redundant_packets
+        record.coded_packets_count = coded_packets_count
         self.insert_record(record=record, time=time)
 
     def get_record(self, time=0):
