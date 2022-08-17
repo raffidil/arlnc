@@ -39,8 +39,10 @@ simulation = BlockBasedRLNC(
                 exponential_loss_param=0.045,
                 loss_rate=0.15, ee_loss_error=0.25, seed=2,
                 force_to_recreate_new_data=True,
-                loss_mode="ge", adjust_algorithm="dynamic")
+                loss_mode="ge", approach="arlnc")
 
 data = simulation.run_simulation()
 
 ```
+
+Example of visualization of the results can be found in `rlnc/report.ipynb` jupyter notebook.
