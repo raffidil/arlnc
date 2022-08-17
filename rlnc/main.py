@@ -10,7 +10,7 @@ base_config = dict(field_order=2**8, generation_size=16,
                    force_to_recreate_new_data=True)
 
 
-config = dict(loss_mode="exponential", adjust_algorithm="dynamic")
+config = dict(loss_mode="exponential", approach="arlnc")
 
 applied_config = base_config | config
 
