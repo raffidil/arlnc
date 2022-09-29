@@ -1,4 +1,4 @@
-# Block Based RLNC simulator for Ms.c. thesis
+# Block Based RLNC simulator for M.Sc. thesis
 
 This repository contains the block based rlnc message passing protocol based on systematic encoding. The code redundancy and generation window size is adjusting with a specific algorithm which is based on receiver's ACK.
 
