@@ -18,7 +18,7 @@ class Encoder:
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
         self.total_size = total_size
-        self.GF = galois.GF(self.field_order, display="int")
+        self.GF = galois.GF(self.field_order, repr="int")
         self.generation_buffer = GenerationBuffer(
             GF)  # used for storing systematic packets
         self.generation_count = int(

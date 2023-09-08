@@ -49,7 +49,7 @@ class BlockBasedRLNC:
         self.loss_mode = loss_mode
         self.force_to_recreate_new_data = force_to_recreate_new_data
         self.approach = approach
-        self.GF = galois.GF(field_order, display="int")
+        self.GF = galois.GF(field_order, repr="int")
         self.encoder = Encoder(GF=self.GF, generation_size=generation_size,
                                packet_size=packet_size, total_size=total_size,
                                initial_window_size=initial_window_size,
