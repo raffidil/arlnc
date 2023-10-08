@@ -160,6 +160,40 @@ class Encoder:
             coded_packets_list = coded_packets_list + [coded_packet]
         return coded_packets_list
 
+    # ####################### pace
+    def create_coded_packet_by_packet_array(self, systematic_packets: list[Packet], generation_id: int) -> Packet:
+        packet_set_size = len(systematic_packets)
+        packet_set_generation_size = systematic_packets[0].generation_size
+        random_coefficient_vector = self.create_random_coefficient_vector(
+            packet_set_size)
+
+        random_coefficient_1D_matrix = random_coefficient_vector.reshape(
+            (-1, packet_set_size))
+
+        packet_data_matrix = []
+        for packet in systematic_packets:
+            if(packet.generation_id == generation_id):
+                packet_data_matrix = packet_data_matrix + \
+                    [self.GF(packet.data)]
+
+        packet_data_galois_matrix = self.GF(packet_data_matrix)
+        coded_packet_data = random_coefficient_1D_matrix.dot(
+            packet_data_galois_matrix)[0]  # returns 1xN matrix => turn to vector
+        coded_packet = Packet(
+            data=coded_packet_data, coefficient_vector=np.pad(random_coefficient_vector, (0,
+                                                                                          packet_set_generation_size-len(random_coefficient_vector)), 'constant'), generation_id=generation_id, generation_size=packet_set_generation_size)
+        return coded_packet
+
+    def create_coded_packet_vector_by_packet_array(self, systematic_packets: list[Packet], generation_id: int, count=1) -> list[Packet]:
+        coded_packets_list = []
+        for i in range(count):
+            coded_packet = self.create_coded_packet_by_packet_array(
+                systematic_packets,
+                generation_id)
+            coded_packets_list = coded_packets_list + [coded_packet]
+        return coded_packets_list
+    ############################
+
     def get_next_window(self, window_size=None):
         # calculate the next generation window with size of window_size
         # from the highest received feedback gen_id

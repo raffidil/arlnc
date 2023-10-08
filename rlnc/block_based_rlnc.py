@@ -36,7 +36,7 @@ class BlockBasedRLNC:
                  seed=42,
                  force_to_recreate_new_data=False,
                  loss_mode="constant",
-                 approach="arlnc"):  # arlnc, standard
+                 approach="arlnc"):  # arlnc, standard, pace
         self.field_order = field_order
         self.generation_size = generation_size  # number of packets in a gen
         self.packet_size = packet_size  # bytes
@@ -72,7 +72,7 @@ class BlockBasedRLNC:
 
             packets_to_send: list[Packet] = []
 
-            if(len(current_generation_window) > 0):
+            if(len(current_generation_window) > 0 and not self.approach == "pace"):
                 # create systematic and coded packets of the current window
                 print('*** current redundancy:', encoder.redundancy)
                 for index, generation_id in enumerate(current_generation_window):
@@ -82,6 +82,45 @@ class BlockBasedRLNC:
                         generation_id=generation_id, count=encoder.redundancy)
                     packets_to_send = packets_to_send + \
                         generation_systematic_packets + generation_coded_packets
+
+            # ####################### pace
+            if(len(current_generation_window) > 0 and self.approach == "pace"):
+                # create systematic and coded packets of the current window
+                print('*** current redundancy:', encoder.redundancy)
+                for index, generation_id in enumerate(current_generation_window):
+                    generation_systematic_packets = encoder.get_generation_by_id(
+                        generation_id).packets
+
+                    redundancy = encoder.redundancy
+                    r = round(len(generation_systematic_packets)/redundancy)
+                    k = 0
+
+                    for i in range(redundancy):
+                        packets_to_code: list[Packet] = []
+                        packets_to_insert: list[Packet] = []
+                        if(i == redundancy-1):
+                            packets_to_code = generation_systematic_packets[slice(
+                                0, len(generation_systematic_packets))]
+                            packets_to_insert = generation_systematic_packets[slice(
+                                k, len(generation_systematic_packets))]
+                        else:
+                            packets_to_code = generation_systematic_packets[slice(
+                                0, k+r)]
+                            packets_to_insert = generation_systematic_packets[slice(
+                                k, k+r)]
+                        k = k+r
+                        range_coded_packets = encoder.create_coded_packet_vector_by_packet_array(packets_to_code,
+                                                                                                 generation_id=generation_id, count=1)
+                        packets_to_send = packets_to_send + \
+                            packets_to_insert + range_coded_packets
+
+            # if(len(packets_to_send) > 1):
+            #     print("======================",
+            #           packets_to_send[0].generation_id)
+            # for index, packet in enumerate(packets_to_send):
+            #     print("+++", packet.coefficient_vector)
+            # print("======================")
+            ##############################
 
             print('\n')
             new_count = len(packets_to_send)
@@ -118,7 +157,7 @@ class BlockBasedRLNC:
                                     average_feedback=average_feedback,
                                     type="feedback")
 
-                if(self.approach == 'standard'):
+                if(self.approach == 'standard' or self.approach == 'pace'):
                     average_feedback = encoder.calculate_average_feedback(
                         response.feedback_list)
                     analytics.track(time=env.now,

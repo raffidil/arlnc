@@ -73,7 +73,7 @@ class Decoder:
                     continue
 
                 next_coefficients = self.GF(current_generation.get_coefficients() +
-                                            [packet.coefficient_vector])
+                                            [np.array(packet.coefficient_vector, dtype='int')])
                 next_coefficients_rank = np.linalg.matrix_rank(
                     next_coefficients)
 
